@@ -1,0 +1,188 @@
+# VGG16 训练配置文件 - 混凝土坍落度识别项目  图标  混淆矩阵
+
+# ==================== 数据相关配置 ====================
+data:
+  data_dir: "data/raw"                    # 原始图像数据存放目录
+  annotation_file: "data/annotations/cls_train.txt"  # 标注文件路径（格式：类别;图像路径）
+  input_shape: [224, 224]                # 输入图像尺寸 [高度, 宽度]，VGG16标准输入224x224
+  num_classes: 3                         # 分类类别数量（坍落度三个范围）
+  class_names: ["class1_125-175", "class2_180-230", "class3_233-285"]  # 类别名称列表
+  train_val_split: 0.8                   # 训练集比例，0.7表示70%训练30%验证
+  random_seed: 10101                     # 数据集划分的随机种子，确保结果可复现
+  stratified_split: false                 # 是否使用分层采样划分数据集
+                                         # true: 确保训练集和验证集的类别比例一致
+                                         # false: 随机划分
+
+# ==================== 数据加载配置 ====================
+dataloader:
+  batch_size: 4          # 批次大小：每次训练处理的图像数量
+                         # 小值：内存占用少，训练稳定，但速度慢
+                         # 大值：训练快，但需要更多内存，可能不稳定
+  num_workers: 0         # 数据加载线程数：0表示主线程加载
+                         # Windows建议设为0，Linux可设为2-4加快加载
+  shuffle: true          # 是否打乱数据顺序：true可提高训练效果
+
+# ==================== 模型结构配置 ====================
+model:
+  name: "vgg16"                          # 模型名称
+  pretrained: true                      # 是否使用预训练权重
+                                         # false: 从头开始训练（需要更多数据和时间）
+                                         # true: 使用ImageNet预训练权重（推荐，收敛快）
+  pretrained_path: "models/pretrained"   # 预训练权重文件存放目录
+  dropout: 0.5                          # Dropout比例：防止过拟合
+                                         # 0.0-1.0，越大越能防止过拟合但可能欠拟合
+
+# ==================== 训练过程配置 ====================
+training:
+  epochs: 50                             # 训练轮数：数据集完整训练的次数
+                                         # 从头训练建议80-200，预训练可用20-50
+  learning_rate: 0.0001                   # 初始学习率：控制参数更新步长
+                                         # 从头训练：0.001-0.01，预训练：0.0001-0.001
+  optimizer: "Adam"                      # 优化器：参数更新算法
+                                         # 支持: Adam, SGD, AdamW, RMSprop
+                                         # Adam: 自适应学习率，适合大多数情况
+                                         # SGD: 经典梯度下降，需要调整学习率
+                                         # AdamW: Adam的改进版，更好的权重衰减
+                                         # RMSprop: 适合RNN等循环网络
+
+  # ==================== 损失函数配置 ====================
+  loss_function:
+    name: "CrossEntropyLoss"             # 损失函数类型（先测试分层采样效果）
+                                         # 支持: CrossEntropyLoss, WeightedCrossEntropyLoss, FocalLoss
+                                         # CrossEntropyLoss: 标准交叉熵，适合平衡数据
+                                         # WeightedCrossEntropyLoss: 加权交叉熵，适合不平衡数据
+                                         # FocalLoss: 专门处理极度不平衡数据
+
+    # 自动权重计算配置（WeightedCrossEntropyLoss使用）
+    auto_weight: false                    # 是否自动计算类别权重
+                                         # true: 根据样本数量自动计算权重
+                                         # false: 使用手动设置的权重
+
+    # 手动权重设置（当auto_weight=false时使用）
+    manual_weights: [1.0, 1.0, 1.0]     # 手动设置各类别权重
+
+    # Focal Loss 专用参数
+    focal_alpha: 1.0                     # Focal Loss的alpha参数
+    focal_gamma: 2.0                     # Focal Loss的gamma参数（聚焦参数）
+
+  # ==================== 学习率调度策略 ====================
+  # 学习率调度器：训练过程中动态调整学习率
+  # 可选类型: StepLR, MultiStepLR, CosineAnnealingLR, ReduceLROnPlateau, None
+  scheduler:
+    name: "none"            # 当前使用的调度器类型
+
+    # StepLR: 固定间隔降低学习率
+    step_lr:
+      step_size: 1                       # 每隔7个epoch降低一次学习率
+      gamma: 0.1                         # 学习率衰减倍数（新学习率 = 旧学习率 × 0.5）
+
+    # MultiStepLR: 在指定epoch降低学习率
+    multi_step_lr:
+      milestones: [10, 15]               # 在第10和15个epoch时降低学习率
+      gamma: 0.1                         # 学习率衰减倍数（×0.1）
+
+    # CosineAnnealingLR: 余弦退火调度（推荐）
+    cosine_annealing_lr:
+      T_max: "auto"                      # 余弦周期长度，"auto"表示自动使用总epoch数
+      eta_min: 1e-6                      # 最小学习率（1e-6 = 0.000001）
+
+    # ReduceLROnPlateau: 根据验证指标自适应调整
+    reduce_lr_on_plateau:
+      mode: "min"                        # 监控模式："min"表示指标越小越好（如loss）
+      factor: 0.5                        # 学习率衰减倍数
+      patience: 3                        # 容忍epochs数：指标3个epoch不改善就降低学习率
+      verbose: true                      # 是否打印学习率变化信息
+
+# ==================== 模型保存配置 ====================
+save:
+  checkpoint_dir: "models/checkpoints"   # 模型检查点保存目录
+  save_best_only: true                 # 是否只保存最佳模型
+                                         # false: 保存所有epoch的模型（占用更多空间）
+                                         # true: 只保存验证精度最高的模型（节省空间）
+  save_frequency: 100                      # 保存频率：每隔多少个epoch保存一次
+                                         # 1: 每个epoch都保存，2: 每2个epoch保存一次
+  save_checkpoint_every_epoch: false      # 是否每个epoch都保存检查点（用于恢复训练）
+
+# ==================== 日志记录配置 ====================
+logging:
+  log_dir: "outputs/logs"               # 训练日志文件保存目录
+                                        # 记录损失值、精度等训练过程数据
+  plot_dir: "outputs/plots"             # 可视化图表保存目录
+                                        # 保存训练曲线图、损失图等
+  verbose: true                         # 是否显示详细训练信息
+                                        # true: 显示详细进度条和统计信息
+                                        # false: 只显示基本信息
+
+# ==================== 数据增强配置 ====================
+# 数据增强：通过变换增加数据多样性，提高模型泛化能力，防止过拟合
+augmentation:
+  # ==================== 预设配置选择 ====================
+  # use_preset: "medium"               # 可选: "light", "medium", "heavy", null
+                                       # 如果设置了预设，会覆盖下面的单独配置
+                                       # 注释掉表示使用下面的自定义配置
+
+  # ==================== 基础增强开关 ====================
+  enable_flip: true                      # 是否启用水平翻转
+                                        # 适用于左右对称的物体（如混凝土样本）
+  enable_rotation: true                  # 是否启用随机旋转
+                                        # 模拟不同拍摄角度
+  enable_color_jitter: true              # 是否启用色彩抖动
+                                        # 模拟不同光照条件
+  enable_scale_jitter: true              # 是否启用尺度抖动
+                                        # 模拟不同拍摄距离
+
+  # ==================== 几何变换参数 ====================
+  jitter: 0.3                          # 长宽比抖动范围 (0.0-1.0)
+                                        # 0.3表示长宽比可变化±30%
+  scale_range: [0.75, 1.25]            # 缩放范围：[最小倍数, 最大倍数]
+                                        # 图像可缩放到75%-125%大小
+  rotation_range: 15                    # 旋转角度范围 (度)
+                                        # 图像可随机旋转±15度
+
+  # ==================== 色彩变换参数 ====================
+  hue_range: 0.1                        # 色调变化范围 (0.0-1.0)
+                                        # 0.1表示色调可变化±10%
+  saturation_range: 1.5                 # 饱和度变化范围 (>1.0)
+                                        # 1.5表示饱和度可变化到150%
+  value_range: 1.5                      # 明度(亮度)变化范围 (>1.0)
+                                        # 1.5表示亮度可变化到150%
+
+  # ==================== 概率控制 ====================
+  flip_probability: 0.5                 # 翻转概率 (0.0-1.0)
+                                        # 0.5表示50%的图像会被翻转
+  rotation_probability: 0.5             # 旋转概率 (0.0-1.0)
+                                        # 0.5表示50%的图像会被旋转
+
+  # 预设配置 (可选择应用)
+  presets:
+    light:    # 轻度增强
+      enable_flip: true
+      enable_rotation: false
+      enable_color_jitter: true
+      enable_scale_jitter: false
+      jitter: 0.1
+      hue_range: 0.05
+      saturation_range: 1.2
+      value_range: 1.2
+
+    medium:   # 中度增强 (推荐)
+      enable_flip: true
+      enable_rotation: true
+      enable_color_jitter: true
+      enable_scale_jitter: true
+      jitter: 0.3
+      rotation_range: 15
+      hue_range: 0.1
+      saturation_range: 1.5
+      value_range: 1.5
+
+    heavy:    # 重度增强
+      enable_flip: true
+      enable_rotation: true
+      enable_color_jitter: true
+      enable_scale_jitter: true
+      jitter: 0.5
+      rotation_range: 25
+      hue_range: 0.2
+      saturation_range: 2.0
+      value_range: 2.0
