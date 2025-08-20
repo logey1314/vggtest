@@ -103,6 +103,24 @@ save:
                                          # 1: 每个epoch都保存，2: 每2个epoch保存一次
   save_checkpoint_every_epoch: false      # 是否每个epoch都保存检查点（用于恢复训练）
 
+# ==================== 恢复训练配置 ====================
+resume:
+  enabled: false                        # 是否启用恢复训练模式
+                                         # false: 正常从头开始训练
+                                         # true: 从检查点恢复训练
+  checkpoint_path: ""                   # 指定检查点文件路径（可选）
+                                         # 例如: "models/checkpoints/train_20241220_143022/checkpoint_epoch_50.pth"
+                                         # 留空则使用auto_find_latest自动查找
+  train_dir: ""                         # 指定训练目录名（可选）
+                                         # 例如: "train_20241220_143022"
+                                         # 留空则使用auto_find_latest自动查找
+  auto_find_latest: true                # 自动查找最新检查点
+                                         # true: 自动找到最新的检查点文件
+                                         # false: 必须指定checkpoint_path或train_dir
+  continue_from_epoch: null             # 从指定epoch继续（可选）
+                                         # null: 从检查点记录的epoch继续
+                                         # 数字: 强制从指定epoch开始（谨慎使用）
+
 # ==================== 日志记录配置 ====================
 logging:
   log_dir: "outputs/logs"               # 训练日志文件保存目录
