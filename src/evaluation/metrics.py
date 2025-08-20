@@ -15,27 +15,45 @@ import torch.nn.functional as F
 class ModelMetrics:
     """
     模型评估指标计算器
-    专门针对混凝土坍落度三分类任务优化
+    支持动态类别数量的分类任务
     """
-    
+
     def __init__(self, class_names=None):
         """
         初始化评估指标计算器
-        
+
         Args:
-            class_names (list): 类别名称列表，默认为坍落度范围
+            class_names (list): 类别名称列表，如果为None则使用通用名称
         """
         if class_names is None:
-            self.class_names = ["125-175mm", "180-230mm", "233-285mm"]
+            # 不再硬编码默认类别名称，而是在使用时动态生成
+            self.class_names = None
+            self.num_classes = None
         else:
             self.class_names = class_names
-        
-        self.num_classes = len(self.class_names)
+            self.num_classes = len(self.class_names)
+
+    def _ensure_class_names(self, y_true=None):
+        """
+        确保类别名称已设置，如果没有则根据数据动态生成
+
+        Args:
+            y_true (array): 真实标签，用于推断类别数量
+        """
+        if self.class_names is None:
+            if y_true is not None:
+                unique_labels = sorted(set(y_true))
+                self.num_classes = len(unique_labels)
+                self.class_names = [f"Class_{i}" for i in unique_labels]
+            else:
+                # 如果无法推断，使用默认的3分类
+                self.num_classes = 3
+                self.class_names = ["Class_0", "Class_1", "Class_2"]
         
     def calculate_basic_metrics(self, y_true, y_pred):
         """
         计算基础分类指标
-        
+
         Args:
             y_true (array): 真实标签
             y_pred (array): 预测标签
@@ -43,21 +61,24 @@ class ModelMetrics:
         Returns:
             dict: 包含各种指标的字典
         """
+        # 确保类别名称已设置
+        self._ensure_class_names(y_true)
+
         metrics = {}
-        
+
         # 整体准确率
         metrics['accuracy'] = accuracy_score(y_true, y_pred)
-        
+
         # 各类别和整体的精确率、召回率、F1-Score
         metrics['precision_macro'] = precision_score(y_true, y_pred, average='macro')
         metrics['recall_macro'] = recall_score(y_true, y_pred, average='macro')
         metrics['f1_macro'] = f1_score(y_true, y_pred, average='macro')
-        
+
         # 加权平均（考虑类别不平衡）
         metrics['precision_weighted'] = precision_score(y_true, y_pred, average='weighted')
         metrics['recall_weighted'] = recall_score(y_true, y_pred, average='weighted')
         metrics['f1_weighted'] = f1_score(y_true, y_pred, average='weighted')
-        
+
         # 各类别详细指标
         precision_per_class = precision_score(y_true, y_pred, average=None)
         recall_per_class = recall_score(y_true, y_pred, average=None)

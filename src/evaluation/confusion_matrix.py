@@ -24,12 +24,10 @@ class ConfusionMatrixAnalyzer:
         初始化混淆矩阵分析器
 
         Args:
-            class_names (list): 类别名称列表
+            class_names (list): 类别名称列表，如果为None则动态推断
         """
-        if class_names is None:
-            self.class_names = ["125-175mm", "180-230mm", "233-285mm"]
-        else:
-            self.class_names = class_names
+        self.class_names = class_names  # 允许为None，在使用时动态推断
+        self.num_classes = len(class_names) if class_names else None
 
         # 设置字体
         setup_matplotlib_font()

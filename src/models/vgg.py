@@ -66,7 +66,7 @@ cfgs = {
 
 }
 
-def vgg16(pretrained=False, progress=True, num_classes=3, model_dir='./models/pretrained', dropout=0.5):
+def vgg16(pretrained=False, progress=True, num_classes=1000, model_dir='./models/pretrained', dropout=0.5):
     """
     VGG16 模型
 
@@ -98,6 +98,6 @@ def vgg16(pretrained=False, progress=True, num_classes=3, model_dir='./models/pr
 
 if __name__=='__main__':
     in_data=torch.ones(1,3,224,224)
-    net=vgg16(pretrained=False, progress=True, num_classes=2)
+    net=vgg16(pretrained=False, progress=True, num_classes=3)  # 示例：3分类
     out=net(in_data)
     print(out)

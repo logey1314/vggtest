@@ -2,19 +2,46 @@
 数据集标注文件生成脚本
 """
 import os
+import yaml
 from os import getcwd
+
+def load_config(config_path):
+    """加载YAML配置文件"""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+        return config
+    except FileNotFoundError:
+        print(f"❌ 配置文件不存在: {config_path}")
+        return None
+    except yaml.YAMLError as e:
+        print(f"❌ 配置文件格式错误: {e}")
+        return None
+
 
 def generate_annotations(data_dir='data/raw', output_file='data/annotations/cls_train.txt', classes=None):
     """
     生成数据集标注文件
-    
+
     Args:
         data_dir (str): 数据目录路径
         output_file (str): 输出标注文件路径
         classes (list): 类别名称列表
     """
     if classes is None:
-        classes = ['class1_125-175', 'class2_180-230', 'class3_233-285']
+        # 尝试从配置文件读取类别信息
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        config_path = os.path.join(project_root, 'configs', 'training_config.yaml')
+
+        config = load_config(config_path)
+        if config and 'data' in config and 'class_names' in config['data']:
+            classes = config['data']['class_names']
+            print(f"📄 从配置文件读取类别信息: {classes}")
+        else:
+            # 如果无法从配置文件读取，使用默认值
+            classes = ['class1_125-175', 'class2_180-230', 'class3_233-285']
+            print(f"⚠️  使用默认类别信息: {classes}")
     
     # 确保输出目录存在
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -80,26 +107,37 @@ if __name__ == '__main__':
     """
     直接运行配置 - 可以在 PyCharm 中直接点击运行
     """
-    # ==================== 配置参数 ====================
-    # 数据目录路径（相对于项目根目录）
-    data_dir = 'data/raw'
-
-    # 输出标注文件路径
-    output_file = 'data/annotations/cls_train.txt'
-
-    # 类别名称列表（必须与文件夹名称一致）
-    classes = ['class1_125-175', 'class2_180-230', 'class3_233-285']
-
     # ==================== 路径处理 ====================
     # 获取脚本所在目录的父目录（项目根目录）
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
 
+    # ==================== 从配置文件读取参数 ====================
+    config_path = os.path.join(project_root, 'configs', 'training_config.yaml')
+    print(f"📄 加载配置文件: {config_path}")
+
+    config = load_config(config_path)
+    if config is None:
+        print("❌ 无法加载配置文件，使用默认配置")
+        # 使用默认配置
+        data_dir = 'data/raw'
+        output_file = 'data/annotations/cls_train.txt'
+        classes = ['class1_125-175', 'class2_180-230', 'class3_233-285']
+    else:
+        # 从配置文件读取参数
+        data_dir = config['data']['data_dir']
+        output_file = config['data']['annotation_file']
+        classes = config['data']['class_names']
+
+        print(f"✅ 配置加载成功:")
+        print(f"   类别数量: {config['data']['num_classes']}")
+        print(f"   类别名称: {classes}")
+
     # 转换为绝对路径
     data_dir_abs = os.path.join(project_root, data_dir)
     output_file_abs = os.path.join(project_root, output_file)
 
-    print(f"📁 项目根目录: {project_root}")
+    print(f"\n📁 项目根目录: {project_root}")
     print(f"📁 数据目录: {data_dir_abs}")
     print(f"📄 输出文件: {output_file_abs}")
 

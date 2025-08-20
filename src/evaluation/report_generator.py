@@ -25,15 +25,13 @@ class ReportGenerator:
     def __init__(self, class_names=None, model_name="VGG16"):
         """
         初始化报告生成器
-        
+
         Args:
-            class_names (list): 类别名称列表
+            class_names (list): 类别名称列表，如果为None则动态推断
             model_name (str): 模型名称
         """
-        if class_names is None:
-            self.class_names = ["125-175mm", "180-230mm", "233-285mm"]
-        else:
-            self.class_names = class_names
+        self.class_names = class_names  # 允许为None，在使用时动态推断
+        self.num_classes = len(class_names) if class_names else None
             
         self.model_name = model_name
 
@@ -41,7 +39,7 @@ class ReportGenerator:
         setup_matplotlib_font()
         self.use_english = not has_chinese_font()
 
-        # 初始化各个分析器
+        # 初始化各个分析器（允许class_names为None）
         self.metrics_calculator = ModelMetrics(class_names)
         self.cm_analyzer = ConfusionMatrixAnalyzer(class_names)
         self.error_analyzer = ErrorAnalyzer(class_names)

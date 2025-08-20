@@ -23,32 +23,49 @@ class ErrorAnalyzer:
     def __init__(self, class_names=None):
         """
         初始化错误样本分析器
-        
+
         Args:
-            class_names (list): 类别名称列表
+            class_names (list): 类别名称列表，如果为None则动态推断
         """
-        if class_names is None:
-            self.class_names = ["125-175mm", "180-230mm", "233-285mm"]
-        else:
-            self.class_names = class_names
+        self.class_names = class_names  # 允许为None，在使用时动态推断
+        self.num_classes = len(class_names) if class_names else None
 
         # 设置字体
         setup_matplotlib_font()
         self.use_english = not has_chinese_font()
+
+    def _ensure_class_names(self, y_true=None):
+        """
+        确保类别名称已设置，如果没有则根据数据动态生成
+
+        Args:
+            y_true (array): 真实标签，用于推断类别数量
+        """
+        if self.class_names is None:
+            if y_true is not None:
+                unique_labels = sorted(set(y_true))
+                self.num_classes = len(unique_labels)
+                self.class_names = [f"Class_{i}" for i in unique_labels]
+            else:
+                # 如果无法推断，使用默认的3分类
+                self.num_classes = 3
+                self.class_names = ["Class_0", "Class_1", "Class_2"]
     
     def find_error_samples(self, y_true, y_pred, y_prob=None, image_paths=None):
         """
         找出所有错误预测的样本
-        
+
         Args:
             y_true (array): 真实标签
             y_pred (array): 预测标签
             y_prob (array, optional): 预测概率
             image_paths (list, optional): 图像路径列表
-            
+
         Returns:
             dict: 错误样本信息
         """
+        # 确保类别名称已设置
+        self._ensure_class_names(y_true)
         # 找出错误预测的索引
         error_indices = np.where(y_true != y_pred)[0]
         
@@ -91,10 +108,13 @@ class ErrorAnalyzer:
         
         for i, (true_label, pred_label) in enumerate(zip(true_labels, pred_labels)):
             # 相邻类别错误 vs 严重错误
-            if abs(true_label - pred_label) == 1:
+            # 改进：支持动态类别数量的相邻判断
+            label_diff = abs(true_label - pred_label)
+            if label_diff == 1:
                 categories['adjacent_errors'].append(i)
-            else:
+            elif label_diff > 1:
                 categories['severe_errors'].append(i)
+            # 如果label_diff == 0，说明预测正确，不应该在错误列表中
             
             # 高低置信度错误（如果有概率信息）
             if 'confidence' in error_info:
@@ -109,18 +129,21 @@ class ErrorAnalyzer:
     def analyze_error_patterns(self, error_info):
         """
         分析错误模式
-        
+
         Args:
             error_info (dict): 错误样本信息
-            
+
         Returns:
             dict: 错误模式分析结果
         """
         if error_info['total_errors'] == 0:
             return {'message': '没有错误样本'}
-        
+
         true_labels = error_info['true_labels']
         pred_labels = error_info['pred_labels']
+
+        # 确保类别名称已设置
+        self._ensure_class_names(true_labels)
         
         analysis = {
             'total_errors': error_info['total_errors'],
@@ -136,10 +159,17 @@ class ErrorAnalyzer:
                 # 该类别最常被误分为哪个类别
                 class_error_mask = (true_labels == class_idx)
                 misclassified_as = pred_labels[class_error_mask]
-                unique, counts = np.unique(misclassified_as, return_counts=True)
-                most_common_idx = unique[np.argmax(counts)]
-                analysis[f'{class_name}_most_misclassified_as'] = self.class_names[most_common_idx]
-                analysis[f'{class_name}_most_misclassified_count'] = np.max(counts)
+                if len(misclassified_as) > 0:
+                    unique, counts = np.unique(misclassified_as, return_counts=True)
+                    most_common_idx = unique[np.argmax(counts)]
+                    # 确保索引是标量并且在有效范围内
+                    most_common_idx = int(most_common_idx)
+                    if 0 <= most_common_idx < len(self.class_names):
+                        analysis[f'{class_name}_most_misclassified_as'] = self.class_names[most_common_idx]
+                        analysis[f'{class_name}_most_misclassified_count'] = int(np.max(counts))
+                    else:
+                        analysis[f'{class_name}_most_misclassified_as'] = f"Unknown_Class_{most_common_idx}"
+                        analysis[f'{class_name}_most_misclassified_count'] = int(np.max(counts))
         
         # 错误类型统计
         categories = self.categorize_errors(error_info)
