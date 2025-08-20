@@ -9,10 +9,11 @@
 - ✅ 详细的训练进度显示（类似YOLO训练风格）
 - ✅ 实时损失和精度监控
 - ✅ 自动保存最佳模型
-- ✅ 训练历史可视化
+- ✅ **自动生成6张专业分析图表**（训练历史、混淆矩阵、ROC曲线、PR曲线、雷达图）
 - ✅ 单张图像和批量预测
 - ✅ 数据增强（翻转、旋转、色域变换等）
 - ✅ 完整的模型评估系统（混淆矩阵、错误分析、性能报告）
+- ✅ **零训练开销的可视化系统**（只在训练结束后生成图表）
 
 ## 📁 项目结构
 
@@ -86,8 +87,38 @@ vgg_test/
 ## 🛠️ 环境要求
 
 ```bash
-pip install torch torchvision tqdm matplotlib pillow opencv-python numpy
+pip install -r requirements.txt
 ```
+
+或手动安装：
+```bash
+pip install torch torchvision tqdm matplotlib pillow opencv-python numpy PyYAML scikit-learn seaborn
+```
+
+### 🔤 中文字体支持
+
+为了正确显示图表中的中文标题，需要安装中文字体：
+
+#### Windows 系统
+通常已内置中文字体，无需额外安装。
+
+#### macOS 系统
+通常已内置中文字体，无需额外安装。
+
+#### Linux 系统
+```bash
+# Ubuntu/Debian
+sudo apt-get install fonts-wqy-microhei fonts-noto-cjk
+
+# CentOS/RHEL
+sudo yum install wqy-microhei-fonts
+
+# 或使用conda安装
+conda install -c conda-forge fonts-conda-ecosystem
+```
+
+#### Docker/服务器环境
+如果在无GUI环境中运行，系统会自动使用英文标题，确保图表正常显示。
 
 ## 📖 使用方法
 
@@ -117,10 +148,35 @@ python scripts/train.py
 - 📈 每个epoch的损失和精度
 - 🎉 最佳模型自动保存
 
-### 4. 可视化训练历史
+### 4. 自动可视化分析
 
+**🎉 新功能：训练完成后自动生成完整的分析图表！**
+
+训练脚本会在训练结束后自动生成6张专业分析图表：
+
+#### 📊 自动生成的图表
+1. **training_history.png** - 训练历史分析（2x2子图）
+   - 训练损失 vs 验证损失
+   - 训练准确率 vs 验证准确率
+   - 验证准确率详细视图（带最佳点标记）
+   - 过拟合分析（训练与验证的差距）
+
+2. **confusion_matrix.png** - 标准混淆矩阵（显示具体数量）
+3. **confusion_matrix_normalized.png** - 归一化混淆矩阵（显示百分比）
+4. **roc_curves.png** - 三个坍落度类别的ROC曲线 + AUC值
+5. **pr_curves.png** - 精确率-召回率曲线 + AP值
+6. **class_performance_radar.png** - 类别性能雷达图（精确率/召回率/F1-Score）
+
+#### 📁 图表保存位置
+```
+outputs/plots/
+├── train_YYYYMMDD_HHMMSS/  # 每次训练的时间戳目录
+└── latest/                 # 最新训练结果（便于查看）
+```
+
+#### 🧪 测试可视化功能
 ```bash
-python scripts/visualize_training.py
+python tests/test_visualization.py
 ```
 
 ### 5. 模型评估

@@ -9,6 +9,9 @@ from PIL import Image
 import os
 import torch
 import torch.nn.functional as F
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from src.utils.font_manager import setup_matplotlib_font, has_chinese_font, get_text_labels
 
 
 class ErrorAnalyzer:
@@ -28,10 +31,10 @@ class ErrorAnalyzer:
             self.class_names = ["125-175mm", "180-230mm", "233-285mm"]
         else:
             self.class_names = class_names
-            
-        # 设置中文字体
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
-        plt.rcParams['axes.unicode_minus'] = False
+
+        # 设置字体
+        setup_matplotlib_font()
+        self.use_english = not has_chinese_font()
     
     def find_error_samples(self, y_true, y_pred, y_prob=None, image_paths=None):
         """
@@ -171,40 +174,48 @@ class ErrorAnalyzer:
         categories = self.categorize_errors(error_info)
         
         fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-        
+
+        # 获取标签文本
+        labels = get_text_labels('error_analysis', self.use_english)
+
         # 1. 各类别错误数量
         class_errors = [analysis.get(f'{name}_errors', 0) for name in self.class_names]
         bars1 = axes[0, 0].bar(self.class_names, class_errors, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
-        axes[0, 0].set_title('各类别错误数量', fontsize=14, fontweight='bold')
-        axes[0, 0].set_ylabel('错误数量')
+        axes[0, 0].set_title(labels.get('class_errors', 'Class Error Count'), fontsize=14, fontweight='bold')
+        axes[0, 0].set_ylabel('Error Count' if self.use_english else '错误数量')
         for bar, count in zip(bars1, class_errors):
             if count > 0:
                 axes[0, 0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(class_errors)*0.01, 
                                f'{count}', ha='center', va='bottom')
         
         # 2. 错误类型分布
-        error_types = ['相邻类别错误', '严重错误']
+        if self.use_english:
+            error_types = [labels.get('adjacent_errors', 'Adjacent Errors'),
+                          labels.get('severe_errors', 'Severe Errors')]
+        else:
+            error_types = ['相邻类别错误', '严重错误']
         error_counts = [analysis['adjacent_errors'], analysis['severe_errors']]
         colors = ['#F39C12', '#E74C3C']
-        
-        wedges, texts, autotexts = axes[0, 1].pie(error_counts, labels=error_types, 
+
+        wedges, texts, autotexts = axes[0, 1].pie(error_counts, labels=error_types,
                                                  colors=colors, autopct='%1.1f%%', startangle=90)
-        axes[0, 1].set_title('错误类型分布', fontsize=14, fontweight='bold')
-        
+        axes[0, 1].set_title(labels.get('error_types', 'Error Type Distribution'), fontsize=14, fontweight='bold')
+
         # 3. 置信度分布（如果有）
         if 'confidence' in error_info:
             confidence = error_info['confidence']
             axes[1, 0].hist(confidence, bins=20, color='#9B59B6', alpha=0.7, edgecolor='black')
-            axes[1, 0].axvline(np.mean(confidence), color='red', linestyle='--', 
-                              label=f'平均值: {np.mean(confidence):.3f}')
-            axes[1, 0].set_title('错误样本置信度分布', fontsize=14, fontweight='bold')
-            axes[1, 0].set_xlabel('置信度')
-            axes[1, 0].set_ylabel('频次')
+            mean_label = f'{labels.get("mean", "Mean")}: {np.mean(confidence):.3f}'
+            axes[1, 0].axvline(np.mean(confidence), color='red', linestyle='--', label=mean_label)
+            axes[1, 0].set_title(labels.get('confidence_dist', 'Error Sample Confidence Distribution'), fontsize=14, fontweight='bold')
+            axes[1, 0].set_xlabel(labels.get('confidence', 'Confidence'))
+            axes[1, 0].set_ylabel(labels.get('frequency', 'Frequency'))
             axes[1, 0].legend()
         else:
-            axes[1, 0].text(0.5, 0.5, '无置信度信息', ha='center', va='center', 
+            no_conf_text = labels.get('no_confidence', 'No Confidence Info')
+            axes[1, 0].text(0.5, 0.5, no_conf_text, ha='center', va='center',
                            transform=axes[1, 0].transAxes, fontsize=16)
-            axes[1, 0].set_title('置信度分布', fontsize=14, fontweight='bold')
+            axes[1, 0].set_title(labels.get('confidence_dist', 'Confidence Distribution'), fontsize=14, fontweight='bold')
         
         # 4. 错误转移矩阵（真实->预测）
         true_labels = error_info['true_labels']

@@ -19,6 +19,7 @@ import shutil
 
 from src.models.vgg import vgg16
 from src.data.dataset import DataGenerator
+from src.utils.visualization import generate_all_plots
 
 
 class FocalLoss(nn.Module):
@@ -61,7 +62,7 @@ def load_config(config_path):
         return None
 
 
-def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None):
+def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None, num_classes=None):
     """
     分层采样划分训练集和验证集
     确保训练集和验证集中各类别的比例保持一致
@@ -70,6 +71,7 @@ def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None):
         lines: 标注数据行列表
         train_ratio: 训练集比例
         random_seed: 随机种子
+        num_classes: 类别数量（动态适应）
 
     Returns:
         train_lines, val_lines: 训练集和验证集数据
@@ -77,18 +79,31 @@ def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None):
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    # 按类别分组
-    class_lines = {0: [], 1: [], 2: []}
+    # 动态确定类别数量
+    if num_classes is None:
+        # 从数据中自动推断类别数量
+        all_class_ids = set()
+        for line in lines:
+            class_id = int(line.split(';')[0])
+            all_class_ids.add(class_id)
+        num_classes = len(all_class_ids)
+        print(f"🔍 自动检测到 {num_classes} 个类别: {sorted(all_class_ids)}")
+
+    # 动态创建类别分组字典
+    class_lines = {i: [] for i in range(num_classes)}
     for line in lines:
         class_id = int(line.split(';')[0])
-        class_lines[class_id].append(line)
+        if class_id < num_classes:  # 确保类别ID在有效范围内
+            class_lines[class_id].append(line)
+        else:
+            print(f"⚠️  跳过无效类别ID: {class_id} (超出范围 0-{num_classes-1})")
 
     # 统计原始分布
     total_samples = len(lines)
     print(f"\n📊 原始数据分布:")
     for class_id, class_data in class_lines.items():
         count = len(class_data)
-        percentage = count / total_samples * 100
+        percentage = count / total_samples * 100 if total_samples > 0 else 0
         print(f"   类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
 
     # 对每个类别进行分层划分
@@ -98,6 +113,10 @@ def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None):
     print(f"\n🎯 分层采样划分 (训练集{train_ratio*100:.0f}% / 验证集{(1-train_ratio)*100:.0f}%):")
 
     for class_id, class_data in class_lines.items():
+        if len(class_data) == 0:
+            print(f"   类别{class_id}: 0训练 + 0验证 (无数据)")
+            continue
+
         # 打乱当前类别的数据
         np.random.shuffle(class_data)
 
@@ -120,26 +139,28 @@ def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None):
     # 验证分层效果
     print(f"\n✅ 分层采样结果验证:")
 
-    # 统计训练集分布
-    train_class_counts = {0: 0, 1: 0, 2: 0}
+    # 动态创建类别计数字典
+    train_class_counts = {i: 0 for i in range(num_classes)}
     for line in train_lines:
         class_id = int(line.split(';')[0])
-        train_class_counts[class_id] += 1
+        if class_id in train_class_counts:
+            train_class_counts[class_id] += 1
 
     # 统计验证集分布
-    val_class_counts = {0: 0, 1: 0, 2: 0}
+    val_class_counts = {i: 0 for i in range(num_classes)}
     for line in val_lines:
         class_id = int(line.split(';')[0])
-        val_class_counts[class_id] += 1
+        if class_id in val_class_counts:
+            val_class_counts[class_id] += 1
 
     print(f"   训练集分布:")
     for class_id, count in train_class_counts.items():
-        percentage = count / len(train_lines) * 100
+        percentage = count / len(train_lines) * 100 if len(train_lines) > 0 else 0
         print(f"     类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
 
     print(f"   验证集分布:")
     for class_id, count in val_class_counts.items():
-        percentage = count / len(val_lines) * 100
+        percentage = count / len(val_lines) * 100 if len(val_lines) > 0 else 0
         print(f"     类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
 
     if random_seed is not None:
@@ -374,7 +395,8 @@ def main():
         train_lines, val_lines = stratified_train_val_split(
             lines,
             train_ratio=TRAIN_VAL_SPLIT,
-            random_seed=RANDOM_SEED
+            random_seed=RANDOM_SEED,
+            num_classes=NUM_CLASSES
         )
     else:
         print(f"\n📊 使用随机划分数据集...")
@@ -555,6 +577,7 @@ def main():
     # 训练历史记录
     train_losses = []
     val_losses = []
+    train_accuracies = []  # 新增：记录训练准确率
     val_accuracies = []
     best_acc = 0.0
 
@@ -571,10 +594,11 @@ def main():
 
         elif LOSS_FUNCTION_NAME == "WeightedCrossEntropyLoss":
             # 统计训练集中各类别样本数量（使用分层采样后的数据）
-            class_counts = [0, 0, 0]
+            class_counts = [0] * NUM_CLASSES  # 动态创建类别计数列表
             for line in train_lines:
                 class_id = int(line.split(';')[0])
-                class_counts[class_id] += 1
+                if 0 <= class_id < NUM_CLASSES:  # 确保类别ID在有效范围内
+                    class_counts[class_id] += 1
 
             if AUTO_WEIGHT:
                 # 自动计算类别权重（反比例权重）
@@ -712,6 +736,7 @@ def main():
         # 记录历史
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
+        train_accuracies.append(train_acc)  # 新增：记录训练准确率
         val_accuracies.append(val_acc)
 
         # ReduceLROnPlateau 需要在验证后调用
@@ -785,6 +810,38 @@ def main():
     print(f"最佳验证精度: {best_acc:.2f}%")
     print(f"模型保存在: {checkpoint_dir}/")
     print("="*80)
+
+    # ==================== 自动生成可视化图表 ====================
+    print(f"\n📊 开始生成训练分析图表...")
+    try:
+        # 生成所有可视化图表
+        evaluation_results = generate_all_plots(
+            train_losses=train_losses,
+            val_losses=val_losses,
+            train_accuracies=train_accuracies,
+            val_accuracies=val_accuracies,
+            model=net,
+            dataloader=gen_test,
+            device=device,
+            class_names=CLASS_NAMES,
+            plot_dir=plot_dir,
+            latest_plot_dir=latest_plot_dir
+        )
+
+        print(f"✅ 所有图表生成完成!")
+        print(f"📁 图表保存位置:")
+        print(f"   📊 时间戳目录: {plot_dir}")
+        print(f"   📊 最新目录: {latest_plot_dir}")
+
+        # 记录图表生成信息到日志
+        logger.info("📊 可视化图表生成完成")
+        logger.info(f"图表保存位置: {plot_dir}")
+        logger.info(f"最新图表位置: {latest_plot_dir}")
+
+    except Exception as e:
+        print(f"⚠️  图表生成过程中出现错误: {e}")
+        logger.error(f"图表生成错误: {e}")
+        print("训练已完成，但图表生成失败。可以稍后手动运行可视化脚本。")
 
     # 记录训练完成信息
     training_end_time = datetime.datetime.now()

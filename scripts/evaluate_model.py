@@ -18,6 +18,7 @@ from tqdm import tqdm
 from src.models.vgg import vgg16
 from src.data.dataset import DataGenerator
 from src.evaluation import ReportGenerator
+from src.utils.font_manager import setup_matplotlib_font, get_font_manager
 
 
 def load_config(config_path):
@@ -163,7 +164,13 @@ def create_evaluation_dataloader(config, project_root):
 
 def main():
     """主评估函数"""
-    
+
+    # ==================== 字体设置 ====================
+    print("🔤 设置字体...")
+    setup_matplotlib_font()
+    font_manager = get_font_manager()
+    font_manager.print_font_status()
+
     # ==================== 配置参数 ====================
     # 获取项目路径
     script_dir = os.path.dirname(os.path.abspath(__file__))

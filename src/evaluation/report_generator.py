@@ -8,6 +8,9 @@ import json
 import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from src.utils.font_manager import setup_matplotlib_font, has_chinese_font, get_text_labels
 from .metrics import ModelMetrics
 from .confusion_matrix import ConfusionMatrixAnalyzer
 from .error_analysis import ErrorAnalyzer
@@ -33,7 +36,11 @@ class ReportGenerator:
             self.class_names = class_names
             
         self.model_name = model_name
-        
+
+        # 设置字体
+        setup_matplotlib_font()
+        self.use_english = not has_chinese_font()
+
         # 初始化各个分析器
         self.metrics_calculator = ModelMetrics(class_names)
         self.cm_analyzer = ConfusionMatrixAnalyzer(class_names)
@@ -142,25 +149,36 @@ class ReportGenerator:
             save_path (str): 保存路径
         """
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
-        
+
+        # 获取标签文本
+        labels = get_text_labels('performance', self.use_english)
+
         # 1. 整体性能指标
         overall_metrics = ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
         overall_values = [metrics_results[metric] for metric in overall_metrics]
-        overall_labels = ['准确率', '精确率', '召回率', 'F1-Score']
-        
+
+        if self.use_english:
+            overall_labels = [labels.get('accuracy', 'Accuracy'),
+                            labels.get('precision', 'Precision'),
+                            labels.get('recall', 'Recall'),
+                            labels.get('f1_score', 'F1-Score')]
+        else:
+            overall_labels = ['准确率', '精确率', '召回率', 'F1-Score']
+
         bars1 = ax1.bar(overall_labels, overall_values, color=['#2ECC71', '#3498DB', '#E74C3C', '#F39C12'])
-        ax1.set_title(f'{self.model_name} 整体性能指标', fontsize=14, fontweight='bold')
-        ax1.set_ylabel('分数')
+        title1 = f'{self.model_name} {labels.get("overall_performance", "Overall Performance Metrics")}'
+        ax1.set_title(title1, fontsize=14, fontweight='bold')
+        ax1.set_ylabel(labels.get('score', 'Score'))
         ax1.set_ylim(0, 1)
         for bar, value in zip(bars1, overall_values):
-            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
+            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
                     f'{value:.3f}', ha='center', va='bottom', fontweight='bold')
-        
+
         # 2. 各类别精确率对比
         precision_values = [metrics_results[f'precision_{name}'] for name in self.class_names]
         bars2 = ax2.bar(self.class_names, precision_values, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
-        ax2.set_title('各类别精确率', fontsize=14, fontweight='bold')
-        ax2.set_ylabel('精确率')
+        ax2.set_title(labels.get('class_precision', 'Class Precision'), fontsize=14, fontweight='bold')
+        ax2.set_ylabel(labels.get('precision', 'Precision'))
         ax2.set_ylim(0, 1)
         ax2.tick_params(axis='x', rotation=45)
         for bar, value in zip(bars2, precision_values):
@@ -170,23 +188,23 @@ class ReportGenerator:
         # 3. 各类别召回率对比
         recall_values = [metrics_results[f'recall_{name}'] for name in self.class_names]
         bars3 = ax3.bar(self.class_names, recall_values, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
-        ax3.set_title('各类别召回率', fontsize=14, fontweight='bold')
-        ax3.set_ylabel('召回率')
+        ax3.set_title(labels.get('class_recall', 'Class Recall'), fontsize=14, fontweight='bold')
+        ax3.set_ylabel(labels.get('recall', 'Recall'))
         ax3.set_ylim(0, 1)
         ax3.tick_params(axis='x', rotation=45)
         for bar, value in zip(bars3, recall_values):
-            ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
+            ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
                     f'{value:.3f}', ha='center', va='bottom')
-        
+
         # 4. 各类别F1-Score对比
         f1_values = [metrics_results[f'f1_{name}'] for name in self.class_names]
         bars4 = ax4.bar(self.class_names, f1_values, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
-        ax4.set_title('各类别F1-Score', fontsize=14, fontweight='bold')
-        ax4.set_ylabel('F1-Score')
+        ax4.set_title(labels.get('class_f1', 'Class F1-Score'), fontsize=14, fontweight='bold')
+        ax4.set_ylabel(labels.get('f1_score', 'F1-Score'))
         ax4.set_ylim(0, 1)
         ax4.tick_params(axis='x', rotation=45)
         for bar, value in zip(bars4, f1_values):
-            ax4.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
+            ax4.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
                     f'{value:.3f}', ha='center', va='bottom')
         
         plt.tight_layout()

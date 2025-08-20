@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+from src.utils.font_manager import setup_matplotlib_font, has_chinese_font, get_text_labels
 
 
 class ConfusionMatrixAnalyzer:
@@ -19,7 +22,7 @@ class ConfusionMatrixAnalyzer:
     def __init__(self, class_names=None):
         """
         初始化混淆矩阵分析器
-        
+
         Args:
             class_names (list): 类别名称列表
         """
@@ -27,10 +30,10 @@ class ConfusionMatrixAnalyzer:
             self.class_names = ["125-175mm", "180-230mm", "233-285mm"]
         else:
             self.class_names = class_names
-            
-        # 设置中文字体
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
-        plt.rcParams['axes.unicode_minus'] = False
+
+        # 设置字体
+        setup_matplotlib_font()
+        self.use_english = not has_chinese_font()
     
     def calculate_confusion_matrix(self, y_true, y_pred, normalize=None):
         """
@@ -55,50 +58,68 @@ class ConfusionMatrixAnalyzer:
             
         return cm
     
-    def plot_confusion_matrix(self, y_true, y_pred, normalize=None, 
-                            save_path=None, title="混淆矩阵", figsize=(10, 8)):
+    def plot_confusion_matrix(self, y_true, y_pred, normalize=None,
+                            save_path=None, title=None, figsize=(10, 8)):
         """
         绘制混淆矩阵热力图
-        
+
         Args:
             y_true (array): 真实标签
             y_pred (array): 预测标签
             normalize (str): 归一化方式
             save_path (str): 保存路径
-            title (str): 图表标题
+            title (str): 图表标题，None表示自动选择
             figsize (tuple): 图像大小
         """
         cm = self.calculate_confusion_matrix(y_true, y_pred, normalize)
-        
+
         plt.figure(figsize=figsize)
-        
+
+        # 获取标签文本
+        labels = get_text_labels('confusion_matrix', self.use_english)
+
+        # 设置标题
+        if title is None:
+            if normalize:
+                title = labels.get('title_normalized', 'Normalized Confusion Matrix')
+            else:
+                title = labels.get('title', 'Confusion Matrix')
+
         # 选择颜色映射
         if normalize:
             fmt = '.2%' if normalize == 'all' else '.2f'
             cmap = 'Blues'
+            cbar_label = labels.get('percentage_label', 'Percentage')
         else:
             fmt = 'd'
             cmap = 'Blues'
-        
+            cbar_label = labels.get('count_label', 'Sample Count')
+
         # 绘制热力图
-        sns.heatmap(cm, 
-                   annot=True, 
-                   fmt=fmt, 
+        sns.heatmap(cm,
+                   annot=True,
+                   fmt=fmt,
                    cmap=cmap,
                    xticklabels=self.class_names,
                    yticklabels=self.class_names,
-                   cbar_kws={'label': '样本数量' if not normalize else '比例'})
-        
+                   cbar_kws={'label': cbar_label})
+
         plt.title(title, fontsize=16, fontweight='bold', pad=20)
-        plt.xlabel('预测标签', fontsize=14)
-        plt.ylabel('真实标签', fontsize=14)
-        
+        plt.xlabel(labels.get('xlabel', 'Predicted Label'), fontsize=14)
+        plt.ylabel(labels.get('ylabel', 'True Label'), fontsize=14)
+
         # 添加统计信息
         accuracy = np.trace(cm) / np.sum(cm) if not normalize else np.trace(cm)
-        if normalize:
-            plt.figtext(0.02, 0.02, f'准确率: {accuracy:.2%}', fontsize=12)
+        if self.use_english:
+            if normalize:
+                plt.figtext(0.02, 0.02, f'Accuracy: {accuracy:.2%}', fontsize=12)
+            else:
+                plt.figtext(0.02, 0.02, f'Total: {np.sum(cm)}, Accuracy: {accuracy:.2%}', fontsize=12)
         else:
-            plt.figtext(0.02, 0.02, f'总样本: {np.sum(cm)}, 准确率: {accuracy:.2%}', fontsize=12)
+            if normalize:
+                plt.figtext(0.02, 0.02, f'准确率: {accuracy:.2%}', fontsize=12)
+            else:
+                plt.figtext(0.02, 0.02, f'总样本: {np.sum(cm)}, 准确率: {accuracy:.2%}', fontsize=12)
         
         plt.tight_layout()
         
