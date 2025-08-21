@@ -59,11 +59,18 @@ model:
   name: "resnet50"                     # 模型类型
   pretrained: true                     # 使用预训练权重
   dropout: 0.5                        # Dropout概率
-  
+
+  # VGG特定配置
+  vgg:
+    progress: true                     # 显示下载进度
+    model_dir: "models/pretrained"     # 权重保存目录
+    pretrained_weights: "models/pretrained/vgg16-397923af.pth"  # 自定义权重路径
+
   # ResNet特定配置
   resnet:
     replace_stride_with_dilation: [false, false, false]
     zero_init_residual: false
+    pretrained_weights: "models/pretrained/resnet50-11ad3fa6.pth"  # 自定义权重路径
 ```
 
 ### 高级配置
@@ -93,6 +100,62 @@ resnet_config = {
     }
 }
 ```
+
+## 📁 预训练权重管理
+
+### 权重文件获取
+
+**VGG16权重**:
+- 文件名: `vgg16-397923af.pth`
+- 下载地址: https://download.pytorch.org/models/vgg16-397923af.pth
+- 大小: ~528MB
+
+**ResNet18权重**:
+- 文件名: `resnet18-f37072fd.pth`
+- 下载地址: https://download.pytorch.org/models/resnet18-f37072fd.pth
+- 大小: ~45MB
+
+**ResNet50权重**:
+- 文件名: `resnet50-11ad3fa6.pth`
+- 下载地址: https://download.pytorch.org/models/resnet50-11ad3fa6.pth
+- 大小: ~98MB
+
+### 权重文件放置
+
+推荐的目录结构：
+```
+models/
+└── pretrained/
+    ├── vgg16-397923af.pth
+    ├── resnet18-f37072fd.pth
+    └── resnet50-11ad3fa6.pth
+```
+
+### 配置权重路径
+
+**方式1: 使用自定义权重**
+```yaml
+model:
+  name: "resnet50"
+  pretrained: true
+  resnet:
+    pretrained_weights: "models/pretrained/resnet50-11ad3fa6.pth"
+```
+
+**方式2: 使用默认下载**
+```yaml
+model:
+  name: "resnet50"
+  pretrained: true
+  resnet:
+    pretrained_weights: null  # 或不设置此项
+```
+
+### 权重加载优先级
+
+1. **自定义权重文件** - 如果指定了`pretrained_weights`且文件存在
+2. **默认下载** - 如果未指定或文件不存在，使用PyTorch默认下载
+3. **无预训练** - 如果`pretrained: false`，从头开始训练
 
 ## 🔧 模型工厂API
 

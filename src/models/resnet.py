@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet18, resnet50, ResNet18_Weights, ResNet50_Weights
 from typing import Optional
+import os
 
 
 class ResNet(nn.Module):
@@ -15,16 +16,17 @@ class ResNet(nn.Module):
     支持ResNet18和ResNet50架构
     """
     
-    def __init__(self, 
+    def __init__(self,
                  variant: str = "resnet50",
                  pretrained: bool = True,
                  num_classes: int = 3,
                  dropout: float = 0.5,
                  replace_stride_with_dilation: Optional[list] = None,
-                 zero_init_residual: bool = False):
+                 zero_init_residual: bool = False,
+                 pretrained_weights: Optional[str] = None):
         """
         初始化ResNet模型
-        
+
         Args:
             variant (str): ResNet变体，支持 "resnet18", "resnet50"
             pretrained (bool): 是否使用预训练权重
@@ -32,6 +34,7 @@ class ResNet(nn.Module):
             dropout (float): Dropout概率
             replace_stride_with_dilation (list): 是否用膨胀卷积替换步长
             zero_init_residual (bool): 是否对残差块的最后一个BN层进行零初始化
+            pretrained_weights (str): 自定义预训练权重文件路径
         """
         super(ResNet, self).__init__()
         
@@ -41,21 +44,41 @@ class ResNet(nn.Module):
         
         # 创建基础ResNet模型
         if self.variant == "resnet18":
-            if pretrained:
-                weights = ResNet18_Weights.IMAGENET1K_V1
-                self.backbone = resnet18(weights=weights)
-            else:
-                self.backbone = resnet18(weights=None)
             self.feature_dim = 512
-            
-        elif self.variant == "resnet50":
-            if pretrained:
-                weights = ResNet50_Weights.IMAGENET1K_V2
-                self.backbone = resnet50(weights=weights)
+            if pretrained and pretrained_weights and os.path.exists(pretrained_weights):
+                # 使用自定义权重文件
+                print(f"   📁 加载自定义ResNet18权重: {pretrained_weights}")
+                from torchvision.models import resnet18 as torch_resnet18
+                self.backbone = torch_resnet18(weights=None)
+                self.backbone.load_state_dict(torch.load(pretrained_weights, map_location='cpu'))
+            elif pretrained:
+                # 使用默认预训练权重
+                weights = ResNet18_Weights.IMAGENET1K_V1
+                from torchvision.models import resnet18 as torch_resnet18
+                self.backbone = torch_resnet18(weights=weights)
             else:
-                self.backbone = resnet50(weights=None)
+                # 不使用预训练权重
+                from torchvision.models import resnet18 as torch_resnet18
+                self.backbone = torch_resnet18(weights=None)
+
+        elif self.variant == "resnet50":
             self.feature_dim = 2048
-            
+            if pretrained and pretrained_weights and os.path.exists(pretrained_weights):
+                # 使用自定义权重文件
+                print(f"   📁 加载自定义ResNet50权重: {pretrained_weights}")
+                from torchvision.models import resnet50 as torch_resnet50
+                self.backbone = torch_resnet50(weights=None)
+                self.backbone.load_state_dict(torch.load(pretrained_weights, map_location='cpu'))
+            elif pretrained:
+                # 使用默认预训练权重
+                weights = ResNet50_Weights.IMAGENET1K_V2
+                from torchvision.models import resnet50 as torch_resnet50
+                self.backbone = torch_resnet50(weights=weights)
+            else:
+                # 不使用预训练权重
+                from torchvision.models import resnet50 as torch_resnet50
+                self.backbone = torch_resnet50(weights=None)
+
         else:
             raise ValueError(f"不支持的ResNet变体: {variant}. 支持的变体: resnet18, resnet50")
         
@@ -172,12 +195,4 @@ def resnet50_concrete(pretrained=True, num_classes=3, dropout=0.5, **kwargs):
     )
 
 
-# 为了保持接口一致性，提供简化的创建函数
-def resnet18(*args, **kwargs):
-    """ResNet18创建函数（兼容接口）"""
-    return resnet18_concrete(*args, **kwargs)
 
-
-def resnet50(*args, **kwargs):
-    """ResNet50创建函数（兼容接口）"""
-    return resnet50_concrete(*args, **kwargs)

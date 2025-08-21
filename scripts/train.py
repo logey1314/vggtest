@@ -249,7 +249,7 @@ def main():
     if VERBOSE:
         print(f"📁 项目根目录: {project_root}")
         print(f"📄 标注文件: {annotation_path}")
-        print(f"🤖 使用预训练模型: {'是' if USE_PRETRAINED else '否'}")
+        print(f"🤖 使用预训练模型: {'是' if config['model']['pretrained'] else '否'}")
         print(f"⏰ 训练时间戳: {timestamp}")
         print(f"💾 检查点目录: {checkpoint_dir}")
         print(f"📝 日志目录: {log_dir}")
@@ -630,7 +630,7 @@ def main():
                 'val_loss': avg_val_loss,
                 'val_acc': val_acc,
                 'best_acc': best_acc,
-                'scheduler_type': SCHEDULER_TYPE
+                'scheduler_type': config['training']['scheduler']['name']
             }
 
             # 只有当调度器存在时才保存其状态

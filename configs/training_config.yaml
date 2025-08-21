@@ -24,8 +24,8 @@ dataloader:
 
 # ==================== 模型结构配置 ====================
 model:
-  name: "vgg16"                          # 模型名称：vgg16, resnet18, resnet50
-  pretrained: true                      # 是否使用预训练权重
+  name: "resnet50"                          # 模型名称：vgg16, resnet18, resnet50
+  pretrained: false                      # 是否使用预训练权重
                                          # false: 从头开始训练（需要更多数据和时间）
                                          # true: 使用ImageNet预训练权重（推荐，收敛快）
   dropout: 0.5                          # Dropout比例：防止过拟合
@@ -35,15 +35,22 @@ model:
   vgg:
     progress: true                       # 是否显示预训练权重下载进度
     model_dir: "models/pretrained"       # 预训练权重文件存放目录
+    pretrained_weights: null             # 自定义预训练权重文件路径
+                                         # 例如: "models/pretrained/vgg16-397923af.pth"
+                                         # 为null时使用默认下载方式
 
   # ResNet特定配置
   resnet:
     replace_stride_with_dilation: [false, false, false]  # 是否用膨胀卷积替换步长
     zero_init_residual: false           # 是否对残差块的最后一个BN层进行零初始化
+    pretrained_weights: null             # 自定义预训练权重文件路径
+                                         # ResNet18: "models/pretrained/resnet18-f37072fd.pth"
+                                         # ResNet50: "models/pretrained/resnet50-11ad3fa6.pth"
+                                         # 为null时使用默认下载方式
 
 # ==================== 训练过程配置 ====================
 training:
-  epochs: 50                             # 训练轮数：数据集完整训练的次数
+  epochs: 100                             # 训练轮数：数据集完整训练的次数
                                          # 从头训练建议80-200，预训练可用20-50
   learning_rate: 0.0001                   # 初始学习率：控制参数更新步长
                                          # 从头训练：0.001-0.01，预训练：0.0001-0.001
@@ -62,7 +69,7 @@ training:
 
   # ==================== 损失函数配置 ====================
   loss_function:
-    name: "WeightedCrossEntropyLoss"     # 损失函数类型
+    name: "CrossEntropyLoss"     # 损失函数类型
                                          # CrossEntropyLoss: 标准交叉熵
                                          # WeightedCrossEntropyLoss: 加权交叉熵（自动处理类别不平衡）
                                          # FocalLoss: Focal Loss（专门处理类别不平衡）
@@ -75,7 +82,7 @@ training:
       focal_gamma: 2.0                   # Focal Loss的gamma参数
   # ==================== 学习率调度策略 ====================
   scheduler:
-    name: "CosineAnnealingLR"            # 调度器类型：StepLR, MultiStepLR, CosineAnnealingLR, ReduceLROnPlateau, None
+    name: "none"            # 调度器类型：StepLR, MultiStepLR, CosineAnnealingLR, ReduceLROnPlateau, None
     params:
       # CosineAnnealingLR参数
       T_max: "auto"                      # 余弦周期长度，"auto"表示自动使用总epoch数

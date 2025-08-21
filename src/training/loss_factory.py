@@ -74,7 +74,9 @@ class LossFactory:
                 'reduction': 'mean',
                 'label_smoothing': 0.0
             },
-            'supports_weights': True
+            'supports_weights': True,
+            'supported_params': ['weight', 'reduction', 'ignore_index', 'label_smoothing'],
+            'custom_params': []
         },
         'weightedcrossentropyloss': {
             'class': nn.CrossEntropyLoss,
@@ -85,7 +87,9 @@ class LossFactory:
                 'label_smoothing': 0.0
             },
             'supports_weights': True,
-            'auto_weight': True
+            'auto_weight': True,
+            'supported_params': ['weight', 'reduction', 'ignore_index', 'label_smoothing'],
+            'custom_params': ['auto_weight']
         },
         'focalloss': {
             'class': FocalLoss,
@@ -96,7 +100,9 @@ class LossFactory:
                 'gamma': 2.0,
                 'reduction': 'mean'
             },
-            'supports_weights': False
+            'supports_weights': False,
+            'supported_params': ['alpha', 'gamma', 'reduction'],
+            'custom_params': []
         },
         'labelsmoothingcrossentropy': {
             'class': LabelSmoothingLoss,
@@ -106,7 +112,9 @@ class LossFactory:
                 'smoothing': 0.1,
                 'reduction': 'mean'
             },
-            'supports_weights': False
+            'supports_weights': False,
+            'supported_params': ['num_classes', 'smoothing', 'reduction'],
+            'custom_params': []
         }
     }
     
@@ -151,21 +159,27 @@ class LossFactory:
         loss_info = cls.LOSS_REGISTRY[loss_name]
         loss_class = loss_info['class']
         default_params = loss_info['default_params'].copy()
-        
+        supported_params = loss_info['supported_params']
+        custom_params = loss_info['custom_params']
+
         # 合并默认参数和用户参数
-        final_params = {**default_params, **loss_params}
-        
-        # 处理特殊参数
-        final_params = cls._process_special_params(
-            loss_name, final_params, loss_info, train_lines, num_classes
+        merged_params = {**default_params, **loss_params}
+
+        # 处理特殊参数（包括自定义参数）
+        processed_params = cls._process_special_params(
+            loss_name, merged_params, loss_info, train_lines, num_classes
         )
+
+        # 只保留该损失函数支持的参数（排除自定义参数）
+        final_params = {k: v for k, v in processed_params.items()
+                       if k in supported_params and k not in custom_params}
         
         # 创建损失函数
         try:
             loss_function = loss_class(**final_params)
             
             # 打印损失函数信息
-            cls._print_loss_info(loss_name, final_params, loss_info)
+            cls._print_loss_info(loss_name, final_params, loss_info, supported_params)
             
             return loss_function
             
@@ -223,26 +237,33 @@ class LossFactory:
         return torch.FloatTensor(class_weights)
     
     @classmethod
-    def _print_loss_info(cls, loss_name: str, params: Dict[str, Any], loss_info: Dict[str, Any]):
+    def _print_loss_info(cls, loss_name: str, params: Dict[str, Any], loss_info: Dict[str, Any], supported_params: list):
         """打印损失函数信息"""
         print(f"\n🎯 损失函数配置:")
         print(f"   损失函数类型: {loss_info['name']}")
-        
+        print(f"   使用参数: {list(params.keys())}")
+
         # 打印关键参数
         if loss_name == 'crossentropyloss' or loss_name == 'weightedcrossentropyloss':
-            print(f"   标签平滑: {params.get('label_smoothing', 0.0)}")
+            if 'label_smoothing' in params:
+                print(f"   标签平滑: {params['label_smoothing']}")
             if 'weight' in params:
                 print(f"   使用类别权重: 是")
             else:
                 print(f"   使用类别权重: 否")
         elif loss_name == 'focalloss':
-            print(f"   Alpha: {params.get('alpha', 1.0)}")
-            print(f"   Gamma: {params.get('gamma', 2.0)}")
+            if 'alpha' in params:
+                print(f"   Alpha: {params['alpha']}")
+            if 'gamma' in params:
+                print(f"   Gamma: {params['gamma']}")
         elif loss_name == 'labelsmoothingcrossentropy':
-            print(f"   平滑参数: {params.get('smoothing', 0.1)}")
-            print(f"   类别数量: {params.get('num_classes', 'N/A')}")
-        
-        print(f"   归约方式: {params.get('reduction', 'mean')}")
+            if 'smoothing' in params:
+                print(f"   平滑参数: {params['smoothing']}")
+            if 'num_classes' in params:
+                print(f"   类别数量: {params['num_classes']}")
+
+        if 'reduction' in params:
+            print(f"   归约方式: {params['reduction']}")
     
     @classmethod
     def get_available_losses(cls) -> Dict[str, Dict[str, Any]]:

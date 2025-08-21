@@ -83,15 +83,17 @@ class ModelFactory:
             vgg_config = config.get('vgg', {})
             model_specific_params.update({
                 'progress': vgg_config.get('progress', True),
-                'model_dir': vgg_config.get('model_dir', None)
+                'model_dir': vgg_config.get('model_dir', None),
+                'pretrained_weights': vgg_config.get('pretrained_weights', None)
             })
-            
+
         elif model_name.startswith('resnet'):
             # ResNet特定参数
             resnet_config = config.get('resnet', {})
             model_specific_params.update({
                 'replace_stride_with_dilation': resnet_config.get('replace_stride_with_dilation', None),
-                'zero_init_residual': resnet_config.get('zero_init_residual', False)
+                'zero_init_residual': resnet_config.get('zero_init_residual', False),
+                'pretrained_weights': resnet_config.get('pretrained_weights', None)
             })
         
         # 合并所有参数

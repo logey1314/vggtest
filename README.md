@@ -163,7 +163,25 @@ conda install -c conda-forge fonts-conda-ecosystem
 python scripts/generate_annotations.py
 ```
 
-### 3. 选择模型和配置
+### 3. 准备预训练权重（推荐）
+
+为了更好的训练效果，建议预先下载预训练权重：
+
+```bash
+# 创建权重目录
+mkdir -p models/pretrained
+
+# 下载VGG16权重（可选）
+wget -O models/pretrained/vgg16-397923af.pth https://download.pytorch.org/models/vgg16-397923af.pth
+
+# 下载ResNet18权重（可选）
+wget -O models/pretrained/resnet18-f37072fd.pth https://download.pytorch.org/models/resnet18-f37072fd.pth
+
+# 下载ResNet50权重（可选）
+wget -O models/pretrained/resnet50-11ad3fa6.pth https://download.pytorch.org/models/resnet50-11ad3fa6.pth
+```
+
+### 4. 选择模型和配置
 
 在 `configs/training_config.yaml` 中配置模型和训练参数：
 
@@ -173,6 +191,10 @@ model:
   name: "resnet50"              # 可选：vgg16, resnet18, resnet50
   pretrained: true              # 使用预训练权重
   dropout: 0.5                  # Dropout概率
+
+  # 指定预训练权重路径（推荐）
+  resnet:
+    pretrained_weights: "models/pretrained/resnet50-11ad3fa6.pth"
 
 # 训练配置
 training:
@@ -194,7 +216,7 @@ training:
       auto_weight: true
 ```
 
-### 4. 开始训练
+### 5. 开始训练
 
 ```bash
 python scripts/train.py
@@ -210,7 +232,7 @@ python scripts/train.py
 - 🎉 最佳模型自动保存
 - 💾 定期保存检查点文件
 
-### 5. 恢复训练（从检查点继续训练）
+### 6. 恢复训练（从检查点继续训练）
 
 **🔄 智能训练管理**
 
@@ -374,6 +396,60 @@ Epoch 1/20 完成:
 - **历史管理脚本**: 查看、比较、清理训练历史
 - **数据处理脚本**: 自动生成标注文件，数据验证
 
+## 📁 预训练权重管理
+
+### 权重文件下载
+
+项目支持两种权重管理方式：
+
+**方式1: 预先下载（推荐）**
+```bash
+# 创建权重目录
+mkdir -p models/pretrained
+
+# 根据需要下载对应模型权重
+# VGG16 (528MB)
+wget -O models/pretrained/vgg16-397923af.pth https://download.pytorch.org/models/vgg16-397923af.pth
+
+# ResNet18 (45MB)
+wget -O models/pretrained/resnet18-f37072fd.pth https://download.pytorch.org/models/resnet18-f37072fd.pth
+
+# ResNet50 (98MB)
+wget -O models/pretrained/resnet50-11ad3fa6.pth https://download.pytorch.org/models/resnet50-11ad3fa6.pth
+```
+
+**方式2: 自动下载**
+- 不指定权重路径时，系统会自动下载到PyTorch缓存目录
+- 首次使用需要网络连接
+
+### 权重配置
+
+**使用预下载权重**:
+```yaml
+model:
+  name: "resnet50"
+  pretrained: true
+  resnet:
+    pretrained_weights: "models/pretrained/resnet50-11ad3fa6.pth"
+```
+
+**使用自动下载**:
+```yaml
+model:
+  name: "resnet50"
+  pretrained: true
+  resnet:
+    pretrained_weights: null  # 或不设置此项
+```
+
+### 权重文件对应关系
+
+| 模型 | 权重文件名 | 大小 | 配置路径 |
+|------|------------|------|----------|
+| VGG16 | vgg16-397923af.pth | 528MB | `vgg.pretrained_weights` |
+| ResNet18 | resnet18-f37072fd.pth | 45MB | `resnet.pretrained_weights` |
+| ResNet50 | resnet50-11ad3fa6.pth | 98MB | `resnet.pretrained_weights` |
+
 ## 📊 模型对比
 
 ### 支持的模型架构
@@ -439,8 +515,12 @@ training:
 2. **批次大小**: 根据GPU内存和模型大小调整batch_size
 3. **模型选择**: 根据精度要求和资源限制选择合适的模型
 4. **配置文件**: 修改类别数量时需同步更新class_names
-5. **预训练权重**: 首次使用会自动下载，需要网络连接
-6. **检查点管理**: 训练过程中会自动保存检查点，可随时中断和恢复
+5. **预训练权重**:
+   - 推荐预先下载权重到`models/pretrained/`目录
+   - 在配置文件中指定权重路径可避免网络问题
+   - 不指定路径时会自动下载（需要网络连接）
+6. **权重文件**: 确保权重文件路径正确且文件完整
+7. **检查点管理**: 训练过程中会自动保存检查点，可随时中断和恢复
 
 ## 🤝 贡献
 

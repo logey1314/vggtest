@@ -21,7 +21,8 @@ class SchedulerFactory:
                 'gamma': 0.5,
                 'last_epoch': -1
             },
-            'requires_metric': False
+            'requires_metric': False,
+            'supported_params': ['step_size', 'gamma', 'last_epoch']
         },
         'multisteplr': {
             'class': optim.lr_scheduler.MultiStepLR,
@@ -32,7 +33,8 @@ class SchedulerFactory:
                 'gamma': 0.1,
                 'last_epoch': -1
             },
-            'requires_metric': False
+            'requires_metric': False,
+            'supported_params': ['milestones', 'gamma', 'last_epoch']
         },
         'cosineannealinglr': {
             'class': optim.lr_scheduler.CosineAnnealingLR,
@@ -43,7 +45,8 @@ class SchedulerFactory:
                 'eta_min': 0,
                 'last_epoch': -1
             },
-            'requires_metric': False
+            'requires_metric': False,
+            'supported_params': ['T_max', 'eta_min', 'last_epoch']
         },
         'reducelronplateau': {
             'class': optim.lr_scheduler.ReduceLROnPlateau,
@@ -59,7 +62,8 @@ class SchedulerFactory:
                 'min_lr': 0,
                 'eps': 1e-8
             },
-            'requires_metric': True
+            'requires_metric': True,
+            'supported_params': ['mode', 'factor', 'patience', 'threshold', 'threshold_mode', 'cooldown', 'min_lr', 'eps']
         },
         'exponentiallr': {
             'class': optim.lr_scheduler.ExponentialLR,
@@ -69,7 +73,8 @@ class SchedulerFactory:
                 'gamma': 0.95,
                 'last_epoch': -1
             },
-            'requires_metric': False
+            'requires_metric': False,
+            'supported_params': ['gamma', 'last_epoch']
         },
         'cosineannealingwarmrestarts': {
             'class': optim.lr_scheduler.CosineAnnealingWarmRestarts,
@@ -81,7 +86,8 @@ class SchedulerFactory:
                 'eta_min': 0,
                 'last_epoch': -1
             },
-            'requires_metric': False
+            'requires_metric': False,
+            'supported_params': ['T_0', 'T_mult', 'eta_min', 'last_epoch']
         }
     }
     
@@ -130,18 +136,25 @@ class SchedulerFactory:
         scheduler_info = cls.SCHEDULER_REGISTRY[scheduler_name]
         scheduler_class = scheduler_info['class']
         default_params = scheduler_info['default_params'].copy()
-        
+        supported_params = scheduler_info['supported_params']
+
         # 处理特殊参数
-        final_params = cls._process_special_params(
+        processed_params = cls._process_special_params(
             scheduler_name, default_params, scheduler_params, total_epochs
         )
+
+        # 只保留该调度器支持的参数
+        filtered_params = {k: v for k, v in processed_params.items() if k in supported_params}
+
+        # 转换参数类型
+        final_params = cls._convert_param_types(filtered_params)
         
         # 创建调度器
         try:
             scheduler = scheduler_class(optimizer, **final_params)
             
             # 打印调度器信息
-            cls._print_scheduler_info(scheduler_name, final_params, scheduler_info['requires_metric'])
+            cls._print_scheduler_info(scheduler_name, final_params, scheduler_info['requires_metric'], supported_params)
             
             return scheduler
             
@@ -177,30 +190,72 @@ class SchedulerFactory:
                 final_params['eta_min'] = 0
         
         return final_params
-    
+
     @classmethod
-    def _print_scheduler_info(cls, scheduler_name: str, params: Dict[str, Any], requires_metric: bool):
+    def _convert_param_types(cls, params: Dict[str, Any]) -> Dict[str, Any]:
+        """转换参数类型，确保数值参数是正确的类型"""
+        converted_params = {}
+
+        for key, value in params.items():
+            try:
+                if key in ['step_size', 'T_max', 'T_0', 'T_mult', 'patience', 'cooldown', 'last_epoch']:
+                    # 整数参数
+                    converted_params[key] = int(value)
+                elif key in ['gamma', 'eta_min', 'factor', 'threshold', 'min_lr', 'eps']:
+                    # 浮点数参数
+                    converted_params[key] = float(value)
+                elif key == 'milestones':
+                    # 里程碑列表转换为整数列表
+                    if isinstance(value, (list, tuple)):
+                        converted_params[key] = [int(x) for x in value]
+                    else:
+                        converted_params[key] = value
+                elif key in ['mode', 'threshold_mode']:
+                    # 字符串参数
+                    converted_params[key] = str(value)
+                else:
+                    # 其他参数保持原样
+                    converted_params[key] = value
+
+            except (ValueError, TypeError) as e:
+                print(f"⚠️  调度器参数 {key} 类型转换失败，使用原值: {value} (错误: {e})")
+                converted_params[key] = value
+
+        return converted_params
+
+    @classmethod
+    def _print_scheduler_info(cls, scheduler_name: str, params: Dict[str, Any], requires_metric: bool, supported_params: list):
         """打印调度器信息"""
         scheduler_info = cls.SCHEDULER_REGISTRY[scheduler_name]
         
         print(f"\n📈 学习率调度器配置:")
         print(f"   调度器类型: {scheduler_info['name']}")
         print(f"   需要指标: {'是' if requires_metric else '否'}")
-        
+        print(f"   使用参数: {list(params.keys())}")
+
         # 打印关键参数
         if scheduler_name == 'steplr':
-            print(f"   步长: {params.get('step_size', 'N/A')}")
-            print(f"   衰减因子: {params.get('gamma', 'N/A')}")
+            if 'step_size' in params:
+                print(f"   步长: {params['step_size']}")
+            if 'gamma' in params:
+                print(f"   衰减因子: {params['gamma']}")
         elif scheduler_name == 'multisteplr':
-            print(f"   里程碑: {params.get('milestones', 'N/A')}")
-            print(f"   衰减因子: {params.get('gamma', 'N/A')}")
+            if 'milestones' in params:
+                print(f"   里程碑: {params['milestones']}")
+            if 'gamma' in params:
+                print(f"   衰减因子: {params['gamma']}")
         elif scheduler_name == 'cosineannealinglr':
-            print(f"   T_max: {params.get('T_max', 'N/A')}")
-            print(f"   最小学习率: {params.get('eta_min', 'N/A')}")
+            if 'T_max' in params:
+                print(f"   T_max: {params['T_max']}")
+            if 'eta_min' in params:
+                print(f"   最小学习率: {params['eta_min']}")
         elif scheduler_name == 'reducelronplateau':
-            print(f"   模式: {params.get('mode', 'N/A')}")
-            print(f"   衰减因子: {params.get('factor', 'N/A')}")
-            print(f"   耐心值: {params.get('patience', 'N/A')}")
+            if 'mode' in params:
+                print(f"   模式: {params['mode']}")
+            if 'factor' in params:
+                print(f"   衰减因子: {params['factor']}")
+            if 'patience' in params:
+                print(f"   耐心值: {params['patience']}")
     
     @classmethod
     def get_available_schedulers(cls) -> Dict[str, Dict[str, Any]]:

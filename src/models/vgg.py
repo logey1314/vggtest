@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import os
 from torch.hub import load_state_dict_from_url
 
 
@@ -44,15 +44,36 @@ class VGG(nn.Module):
         x = self.classifier(x)
         return x
 
+    def get_name(self):
+        """获取模型名称"""
+        return "VGG16"
+
+    def get_info(self):
+        """获取模型详细信息"""
+        return {
+            'name': 'VGG16',
+            'num_classes': self.classifier[-1].out_features
+        }
+
+    def get_parameter_count(self):
+        """获取参数数量"""
+        total_params = sum(p.numel() for p in self.parameters())
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        return {
+            'total': total_params,
+            'trainable': trainable_params,
+            'non_trainable': total_params - trainable_params
+        }
+
 
 def make_layers(cfg, batch_norm = False):#make_layers对输入的cfg进行循环
     layers = []
     in_channels = 3
-    for v in cfg:#对cfg进行输入循环,取第一个v
+    for v in cfg:
         if v == "M":
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]#把输入图像进行缩小
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)#输入通道是3，输出通道64
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
@@ -60,13 +81,14 @@ def make_layers(cfg, batch_norm = False):#make_layers对输入的cfg进行循环
             in_channels = v
     return nn.Sequential(*layers)
 
-
 cfgs = {
+    "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "B": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
     "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
 
 }
 
-def vgg16(pretrained=False, progress=True, num_classes=1000, model_dir='./models/pretrained', dropout=0.5):
+def vgg16(pretrained=False, progress=True, num_classes=1000, model_dir='./models/pretrained', dropout=0.5, pretrained_weights=None):
     """
     VGG16 模型
 
@@ -76,14 +98,22 @@ def vgg16(pretrained=False, progress=True, num_classes=1000, model_dir='./models
         num_classes (int): 分类数量
         model_dir (str): 预训练模型保存目录
         dropout (float): Dropout比例
+        pretrained_weights (str): 自定义预训练权重文件路径
 
     Returns:
         VGG: VGG16 模型实例
     """
     model = VGG(make_layers(cfgs['D']), dropout=dropout)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['vgg16'], model_dir=model_dir, progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_weights and os.path.exists(pretrained_weights):
+            # 使用自定义权重文件
+            print(f"   📁 加载自定义VGG16权重: {pretrained_weights}")
+            state_dict = torch.load(pretrained_weights, map_location='cpu')
+            model.load_state_dict(state_dict)
+        else:
+            # 使用默认预训练权重
+            state_dict = load_state_dict_from_url(model_urls['vgg16'], model_dir=model_dir, progress=progress)
+            model.load_state_dict(state_dict)
     if num_classes != 1000:
         model.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),

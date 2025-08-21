@@ -216,47 +216,87 @@ def test_loss_factory():
         return False
 
 
+def test_custom_weights():
+    """测试自定义权重路径功能"""
+    print("\n📁 测试自定义权重路径...")
+
+    try:
+        from src.models import create_model
+
+        # 测试VGG16自定义权重路径（文件不存在，应该回退到默认）
+        vgg_config = {
+            'name': 'vgg16',
+            'pretrained': True,
+            'num_classes': 3,
+            'vgg': {
+                'pretrained_weights': 'models/pretrained/vgg16-397923af.pth'  # 假设不存在
+            }
+        }
+
+        vgg_model = create_model(vgg_config)
+        print(f"   ✅ VGG16自定义权重路径测试成功（回退到默认下载）")
+
+        # 测试ResNet50自定义权重路径（文件不存在，应该回退到默认）
+        resnet_config = {
+            'name': 'resnet50',
+            'pretrained': True,
+            'num_classes': 3,
+            'resnet': {
+                'pretrained_weights': 'models/pretrained/resnet50-11ad3fa6.pth'  # 假设不存在
+            }
+        }
+
+        resnet_model = create_model(resnet_config)
+        print(f"   ✅ ResNet50自定义权重路径测试成功（回退到默认下载）")
+
+        return True
+
+    except Exception as e:
+        print(f"   ❌ 自定义权重路径测试失败: {e}")
+        return False
+
+
 def test_config_integration():
     """测试配置文件集成"""
     print("\n📄 测试配置文件集成...")
-    
+
     try:
         # 加载配置文件
         config_path = 'configs/training_config.yaml'
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
-        
+
         print(f"   ✅ 配置文件加载成功")
-        
+
         # 测试模型配置
         from src.models import create_model
         model_config = config['model'].copy()
         model_config['num_classes'] = 3
         model_config['pretrained'] = False  # 避免下载
-        
+
         model = create_model(model_config)
         print(f"   ✅ 从配置创建模型成功: {model_config['name']}")
-        
+
         # 测试优化器配置
         from src.training import create_optimizer
         optimizer_config = config['training']['optimizer']
         optimizer = create_optimizer(model, optimizer_config)
         print(f"   ✅ 从配置创建优化器成功: {optimizer_config['name']}")
-        
+
         # 测试调度器配置
         from src.training import create_scheduler
         scheduler_config = config['training']['scheduler']
         scheduler = create_scheduler(optimizer, scheduler_config, total_epochs=50)
         print(f"   ✅ 从配置创建调度器成功: {scheduler_config['name']}")
-        
+
         # 测试损失函数配置
         from src.training import create_loss_function
         loss_config = config['training']['loss_function']
         criterion = create_loss_function(loss_config)
         print(f"   ✅ 从配置创建损失函数成功: {loss_config['name']}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"   ❌ 配置文件集成测试失败: {e}")
         return False
@@ -272,6 +312,7 @@ def main():
         test_optimizer_factory,
         test_scheduler_factory,
         test_loss_factory,
+        test_custom_weights,
         test_config_integration
     ]
     

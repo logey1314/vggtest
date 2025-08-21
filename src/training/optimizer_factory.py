@@ -23,7 +23,8 @@ class OptimizerFactory:
                 'eps': 1e-08,
                 'weight_decay': 0,
                 'amsgrad': False
-            }
+            },
+            'supported_params': ['lr', 'betas', 'eps', 'weight_decay', 'amsgrad']
         },
         'sgd': {
             'class': optim.SGD,
@@ -35,7 +36,8 @@ class OptimizerFactory:
                 'dampening': 0,
                 'weight_decay': 0,
                 'nesterov': False
-            }
+            },
+            'supported_params': ['lr', 'momentum', 'dampening', 'weight_decay', 'nesterov']
         },
         'adamw': {
             'class': optim.AdamW,
@@ -47,7 +49,8 @@ class OptimizerFactory:
                 'eps': 1e-08,
                 'weight_decay': 0.01,
                 'amsgrad': False
-            }
+            },
+            'supported_params': ['lr', 'betas', 'eps', 'weight_decay', 'amsgrad']
         },
         'rmsprop': {
             'class': optim.RMSprop,
@@ -60,7 +63,8 @@ class OptimizerFactory:
                 'weight_decay': 0,
                 'momentum': 0,
                 'centered': False
-            }
+            },
+            'supported_params': ['lr', 'alpha', 'eps', 'weight_decay', 'momentum', 'centered']
         },
         'adagrad': {
             'class': optim.Adagrad,
@@ -72,7 +76,8 @@ class OptimizerFactory:
                 'weight_decay': 0,
                 'initial_accumulator_value': 0,
                 'eps': 1e-10
-            }
+            },
+            'supported_params': ['lr', 'lr_decay', 'weight_decay', 'initial_accumulator_value', 'eps']
         }
     }
     
@@ -115,44 +120,114 @@ class OptimizerFactory:
         optimizer_info = cls.OPTIMIZER_REGISTRY[optimizer_name]
         optimizer_class = optimizer_info['class']
         default_params = optimizer_info['default_params'].copy()
-        
+        supported_params = optimizer_info['supported_params']
+
         # 合并默认参数和用户参数
-        final_params = {**default_params, **optimizer_params}
+        merged_params = {**default_params, **optimizer_params}
+
+        # 只保留该优化器支持的参数
+        filtered_params = {k: v for k, v in merged_params.items() if k in supported_params}
+
+        # 转换参数类型
+        final_params = cls._convert_param_types(filtered_params)
         
         # 创建优化器
         try:
             optimizer = optimizer_class(model.parameters(), **final_params)
             
             # 打印优化器信息
-            cls._print_optimizer_info(optimizer_name, final_params)
+            cls._print_optimizer_info(optimizer_name, final_params, supported_params)
             
             return optimizer
             
         except Exception as e:
             raise RuntimeError(f"创建优化器 {optimizer_name} 失败: {e}")
-    
+
     @classmethod
-    def _print_optimizer_info(cls, optimizer_name: str, params: Dict[str, Any]):
+    def _convert_param_types(cls, params: Dict[str, Any]) -> Dict[str, Any]:
+        """转换参数类型，确保数值参数是正确的类型"""
+        converted_params = {}
+
+        for key, value in params.items():
+            try:
+                if key == 'lr':
+                    # 学习率转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'weight_decay':
+                    # 权重衰减转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'eps':
+                    # eps转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'momentum':
+                    # 动量转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'alpha':
+                    # alpha转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'lr_decay':
+                    # lr_decay转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'dampening':
+                    # dampening转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'initial_accumulator_value':
+                    # initial_accumulator_value转换为浮点数
+                    converted_params[key] = float(value)
+                elif key == 'betas':
+                    # betas转换为元组，元素为浮点数
+                    if isinstance(value, (list, tuple)):
+                        converted_params[key] = tuple(float(x) for x in value)
+                    else:
+                        converted_params[key] = value
+                elif key in ['nesterov', 'amsgrad', 'centered']:
+                    # 布尔值参数
+                    if isinstance(value, str):
+                        converted_params[key] = value.lower() in ('true', '1', 'yes', 'on')
+                    else:
+                        converted_params[key] = bool(value)
+                else:
+                    # 其他参数保持原样
+                    converted_params[key] = value
+
+            except (ValueError, TypeError) as e:
+                print(f"⚠️  参数 {key} 类型转换失败，使用原值: {value} (错误: {e})")
+                converted_params[key] = value
+
+        return converted_params
+
+    @classmethod
+    def _print_optimizer_info(cls, optimizer_name: str, params: Dict[str, Any], supported_params: list):
         """打印优化器信息"""
         optimizer_info = cls.OPTIMIZER_REGISTRY[optimizer_name]
-        
+
         print(f"\n⚙️  优化器配置:")
         print(f"   优化器类型: {optimizer_info['name']}")
         print(f"   学习率: {params.get('lr', 'N/A')}")
-        
+        print(f"   使用参数: {list(params.keys())}")
+
         # 打印关键参数
         if optimizer_name == 'adam' or optimizer_name == 'adamw':
-            print(f"   Beta1: {params.get('betas', (0.9, 0.999))[0]}")
-            print(f"   Beta2: {params.get('betas', (0.9, 0.999))[1]}")
-            print(f"   权重衰减: {params.get('weight_decay', 0)}")
+            if 'betas' in params:
+                betas = params['betas']
+                print(f"   Beta1: {betas[0]}")
+                print(f"   Beta2: {betas[1]}")
+            if 'weight_decay' in params:
+                print(f"   权重衰减: {params['weight_decay']}")
         elif optimizer_name == 'sgd':
-            print(f"   动量: {params.get('momentum', 0)}")
-            print(f"   Nesterov: {params.get('nesterov', False)}")
-            print(f"   权重衰减: {params.get('weight_decay', 0)}")
+            if 'momentum' in params:
+                print(f"   动量: {params['momentum']}")
+            if 'nesterov' in params:
+                print(f"   Nesterov: {params['nesterov']}")
+            if 'weight_decay' in params:
+                print(f"   权重衰减: {params['weight_decay']}")
         elif optimizer_name == 'rmsprop':
-            print(f"   Alpha: {params.get('alpha', 0.99)}")
-            print(f"   动量: {params.get('momentum', 0)}")
-            print(f"   权重衰减: {params.get('weight_decay', 0)}")
+            if 'alpha' in params:
+                print(f"   Alpha: {params['alpha']}")
+            if 'momentum' in params:
+                print(f"   动量: {params['momentum']}")
+            if 'weight_decay' in params:
+                print(f"   权重衰减: {params['weight_decay']}")
     
     @classmethod
     def get_available_optimizers(cls) -> Dict[str, Dict[str, Any]]:
