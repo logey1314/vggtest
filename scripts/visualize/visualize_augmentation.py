@@ -4,12 +4,23 @@
 """
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# 添加项目根目录到路径
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from src.data.dataset import DataGenerator
+from .visualize_utils import (
+    setup_plot_style,
+    save_plot_with_timestamp,
+    create_output_directory,
+    validate_image_path,
+    get_project_root,
+    print_tool_header,
+    print_completion_message
+)
+
 
 def visualize_augmentation_effects():
     """可视化数据增强效果"""
@@ -64,14 +75,15 @@ def visualize_augmentation_effects():
     }
     
     # ==================== 路径处理 ====================
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)
-    sample_image_path = os.path.join(project_root, SAMPLE_IMAGE_PATH)
+    project_root = get_project_root()
+    sample_image_path = validate_image_path(SAMPLE_IMAGE_PATH, project_root)
     
-    if not os.path.exists(sample_image_path):
-        print(f"❌ 示例图片不存在: {sample_image_path}")
+    if not sample_image_path:
         print("请修改 SAMPLE_IMAGE_PATH 为有效的图片路径")
-        return
+        return None
+    
+    # ==================== 设置绘图样式 ====================
+    chinese_support = setup_plot_style()
     
     # ==================== 生成增强效果 ====================
     input_shape = [224, 224]
@@ -114,13 +126,10 @@ def visualize_augmentation_effects():
     plt.tight_layout()
     
     # 保存结果
-    output_dir = os.path.join(project_root, 'outputs', 'plots')
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, 'augmentation_effects.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"📊 数据增强效果图已保存: {output_path}")
+    output_dir = create_output_directory(os.path.join(project_root, 'outputs', 'plots'))
+    output_path = save_plot_with_timestamp(fig, output_dir, 'augmentation_effects')
     
-    plt.show()
+    return output_path
 
 
 def print_augmentation_info():
@@ -160,12 +169,9 @@ def print_augmentation_info():
     print("• 根据数据集特点调整增强强度")
 
 
-if __name__ == "__main__":
-    """
-    直接运行配置 - 可以在 PyCharm 中直接点击运行
-    """
-    print("🎨 数据增强可视化工具")
-    print("=" * 50)
+def main():
+    """主函数"""
+    print_tool_header("数据增强可视化工具", "预览不同数据增强配置的效果")
     
     # 打印详细信息
     print_augmentation_info()
@@ -174,9 +180,18 @@ if __name__ == "__main__":
     
     # 生成可视化
     try:
-        visualize_augmentation_effects()
-        print("\n✅ 可视化完成！")
-        print("现在你可以根据效果图调整数据增强配置。")
+        output_path = visualize_augmentation_effects()
+        if output_path:
+            print_completion_message(output_path, "现在你可以根据效果图调整数据增强配置。")
+        else:
+            print("❌ 可视化失败")
     except Exception as e:
         print(f"\n❌ 可视化失败: {e}")
         print("请检查示例图片路径是否正确。")
+
+
+if __name__ == "__main__":
+    """
+    直接运行配置 - 可以在 PyCharm 中直接点击运行
+    """
+    main()

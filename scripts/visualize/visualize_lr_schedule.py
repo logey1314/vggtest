@@ -4,12 +4,23 @@
 """
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# 添加项目根目录到路径
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
+from .visualize_utils import (
+    setup_plot_style,
+    save_plot_with_timestamp,
+    create_output_directory,
+    get_project_root,
+    print_tool_header,
+    print_completion_message,
+    create_color_palette
+)
+
 
 def visualize_lr_schedules():
     """可视化不同学习率调度器的变化曲线"""
@@ -25,27 +36,30 @@ def visualize_lr_schedules():
     schedulers_config = {
         'StepLR': {
             'scheduler': lambda opt: optim.lr_scheduler.StepLR(opt, step_size=7, gamma=0.5),
-            'color': 'blue',
+            'color': '#1f77b4',
             'linestyle': '-'
         },
         'MultiStepLR': {
             'scheduler': lambda opt: optim.lr_scheduler.MultiStepLR(opt, milestones=[10, 15], gamma=0.1),
-            'color': 'red',
+            'color': '#ff7f0e',
             'linestyle': '--'
         },
         'CosineAnnealingLR': {
             'scheduler': lambda opt: optim.lr_scheduler.CosineAnnealingLR(opt, T_max=20, eta_min=1e-6),
-            'color': 'green',
+            'color': '#2ca02c',
             'linestyle': '-.'
         },
         'ReduceLROnPlateau': {
             'scheduler': lambda opt: optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', factor=0.5, patience=3),
-            'color': 'orange',
+            'color': '#d62728',
             'linestyle': ':'
         }
     }
     
-    plt.figure(figsize=(12, 8))
+    # 设置绘图样式
+    chinese_support = setup_plot_style()
+    
+    fig, ax = plt.subplots(figsize=(12, 8))
     
     for name, config in schedulers_config.items():
         # 创建优化器
@@ -74,7 +88,7 @@ def visualize_lr_schedules():
                 scheduler.step()
         
         # 绘制学习率曲线
-        plt.plot(epochs, learning_rates, 
+        ax.plot(epochs, learning_rates, 
                 label=name, 
                 color=config['color'], 
                 linestyle=config['linestyle'],
@@ -82,38 +96,43 @@ def visualize_lr_schedules():
                 marker='o',
                 markersize=4)
     
-    plt.xlabel('Epoch', fontsize=12)
-    plt.ylabel('Learning Rate', fontsize=12)
-    plt.title('不同学习率调度器的变化曲线', fontsize=14, fontweight='bold')
-    plt.legend(fontsize=10)
-    plt.grid(True, alpha=0.3)
-    plt.yscale('log')  # 使用对数坐标更好地显示变化
+    ax.set_xlabel('Epoch', fontsize=12)
+    ax.set_ylabel('Learning Rate', fontsize=12)
+    
+    if chinese_support:
+        ax.set_title('不同学习率调度器的变化曲线', fontsize=14, fontweight='bold')
+        info_text = ('说明：\n'
+                    '• StepLR: 每7个epoch降低50%\n'
+                    '• MultiStepLR: 第10,15个epoch降低90%\n'
+                    '• CosineAnnealingLR: 余弦退火到1e-6\n'
+                    '• ReduceLROnPlateau: 验证损失不降时减半')
+    else:
+        ax.set_title('Learning Rate Scheduler Comparison', fontsize=14, fontweight='bold')
+        info_text = ('Description:\n'
+                    '• StepLR: Reduce by 50% every 7 epochs\n'
+                    '• MultiStepLR: Reduce by 90% at epochs 10,15\n'
+                    '• CosineAnnealingLR: Cosine annealing to 1e-6\n'
+                    '• ReduceLROnPlateau: Reduce when val loss plateaus')
+    
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_yscale('log')  # 使用对数坐标更好地显示变化
     
     # 添加说明文本
-    plt.text(0.02, 0.98, 
-             '说明：\n'
-             '• StepLR: 每7个epoch降低50%\n'
-             '• MultiStepLR: 第10,15个epoch降低90%\n'
-             '• CosineAnnealingLR: 余弦退火到1e-6\n'
-             '• ReduceLROnPlateau: 验证损失不降时减半',
-             transform=plt.gca().transAxes,
-             fontsize=9,
-             verticalalignment='top',
-             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+    ax.text(0.02, 0.98, info_text,
+            transform=ax.transAxes,
+            fontsize=9,
+            verticalalignment='top',
+            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
     plt.tight_layout()
     
     # 保存图片
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)
-    output_dir = os.path.join(project_root, 'outputs', 'plots')
-    os.makedirs(output_dir, exist_ok=True)
+    project_root = get_project_root()
+    output_dir = create_output_directory(os.path.join(project_root, 'outputs', 'plots'))
+    output_path = save_plot_with_timestamp(fig, output_dir, 'lr_schedules_comparison')
     
-    output_path = os.path.join(output_dir, 'lr_schedules_comparison.png')
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"📊 学习率调度器对比图已保存: {output_path}")
-    
-    plt.show()
+    return output_path
 
 
 def print_lr_schedule_info():
@@ -149,12 +168,9 @@ def print_lr_schedule_info():
     print("   • 🥉 StepLR: 训练过程可预测时")
 
 
-if __name__ == "__main__":
-    """
-    直接运行配置 - 可以在 PyCharm 中直接点击运行
-    """
-    print("🔍 学习率调度器可视化工具")
-    print("=" * 50)
+def main():
+    """主函数"""
+    print_tool_header("学习率调度器可视化工具", "预览不同学习率调度器的变化曲线")
     
     # 打印详细信息
     print_lr_schedule_info()
@@ -162,7 +178,18 @@ if __name__ == "__main__":
     print("\n📈 生成学习率变化曲线...")
     
     # 生成可视化图表
-    visualize_lr_schedules()
-    
-    print("\n✅ 可视化完成！")
-    print("现在你可以根据图表选择合适的学习率调度器。")
+    try:
+        output_path = visualize_lr_schedules()
+        if output_path:
+            print_completion_message(output_path, "现在你可以根据图表选择合适的学习率调度器。")
+        else:
+            print("❌ 可视化失败")
+    except Exception as e:
+        print(f"\n❌ 可视化失败: {e}")
+
+
+if __name__ == "__main__":
+    """
+    直接运行配置 - 可以在 PyCharm 中直接点击运行
+    """
+    main()

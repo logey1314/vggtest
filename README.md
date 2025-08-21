@@ -2,19 +2,26 @@
 
 基于 PyTorch 和 VGG16 网络的三分类图像识别项目，具有详细的训练日志和可视化功能。
 
-## 🚀 功能特点
+## ✨ 功能特点
 
-- ✅ 基于预训练 VGG16 网络的迁移学习
-- ✅ 支持三分类任务
-- ✅ 详细的训练进度显示（类似YOLO训练风格）
-- ✅ 实时损失和精度监控
-- ✅ 自动保存最佳模型
-- ✅ **自动生成6张专业分析图表**（训练历史、混淆矩阵、ROC曲线、PR曲线、雷达图）
-- ✅ 单张图像和批量预测
-- ✅ 数据增强（翻转、旋转、色域变换等）
-- ✅ 完整的模型评估系统（混淆矩阵、错误分析、性能报告）
-- ✅ **零训练开销的可视化系统**（只在训练结束后生成图表）
-- ✅ **检查点恢复训练功能**（从任意检查点继续训练，避免重新开始）
+### 🎯 核心功能
+- ✅ **VGG16深度学习模型** - 基于ImageNet预训练的混凝土坍落度分类
+- ✅ **多分类坍落度识别** - 精确识别125-285mm范围内的坍落度等级
+- ✅ **智能数据增强** - 多种增强策略提升模型泛化能力
+- ✅ **自动检查点管理** - 训练过程自动保存，支持断点续训
+- ✅ **专业评估体系** - 多维度性能分析和错误样本诊断
+
+### 🛠️ 模块化架构
+- ✅ **训练管理模块** - 完整的训练和恢复训练功能
+- ✅ **评估分析模块** - 支持指定轮次评估和综合性能分析
+- ✅ **可视化工具模块** - 数据增强预览、学习率对比、训练历史查看
+- ✅ **自动化流程** - 训练完成自动生成专业分析图表
+
+### 📊 技术特性
+- ✅ **PyCharm友好** - 所有脚本支持IDE直接运行
+- ✅ **配置驱动** - 灵活的YAML配置文件管理
+- ✅ **模块化设计** - 每个功能模块都有详细的使用说明
+- ✅ **测试覆盖** - 完整的功能测试确保代码质量
 
 ## 📁 项目结构
 
@@ -46,10 +53,18 @@ vgg_test/
 │
 ├── scripts/                    # 执行脚本
 │   ├── train.py               # 主训练脚本
-│   ├── resume_training.py     # 恢复训练脚本
 │   ├── predict.py             # 预测脚本
-│   ├── evaluate_model.py      # 模型评估脚本
-│   ├── visualize_training.py  # 训练可视化脚本
+│   ├── training/              # 训练管理模块
+│   │   ├── resume_training.py # 恢复训练脚本
+│   │   └── README.md          # 训练管理模块详细说明
+│   ├── evaluate/              # 评估模块
+│   │   ├── evaluate_model.py  # 模型评估脚本
+│   │   └── README.md          # 评估模块详细说明
+│   ├── visualize/             # 可视化工具模块
+│   │   ├── visualize_augmentation.py  # 数据增强效果预览
+│   │   ├── visualize_lr_schedule.py   # 学习率调度器对比
+│   │   ├── visualize_training.py      # 训练历史信息查看
+│   │   └── README.md          # 可视化工具详细说明
 │   └── generate_annotations.py # 数据集标注生成器
 │
 ├── data/                       # 数据目录
@@ -119,10 +134,6 @@ sudo yum install wqy-microhei-fonts
 # 或使用conda安装
 conda install -c conda-forge fonts-conda-ecosystem
 ```
-
-#### Docker/服务器环境
-如果在无GUI环境中运行，系统会自动使用英文标题，确保图表正常显示。
-
 ## 📖 使用方法
 
 ### 1. 准备数据集
@@ -154,101 +165,69 @@ python scripts/train.py
 
 ### 4. 恢复训练（从检查点继续训练）
 
-**🔄 新功能：支持从任意检查点恢复训练！**
+**🔄 智能训练管理**
 
-如果训练中断或想要继续训练更多轮数，可以使用恢复训练功能：
+```bash
+# 修改配置启用恢复训练
+# configs/training_config.yaml: resume.enabled: true
 
-#### 📋 使用步骤
-
-1. **修改配置文件** `configs/training_config.yaml`：
-   ```yaml
-   training:
-     epochs: 100                    # 设置目标轮数（如从50轮继续到100轮）
-
-   resume:
-     enabled: true                  # 启用恢复训练模式
-     auto_find_latest: true         # 自动查找最新检查点
-   ```
-
-2. **运行恢复训练脚本**：
-   ```bash
-   python scripts/resume_training.py
-   ```
-
-   或在PyCharm中直接运行 `resume_training.py` 的主函数
-
-#### ✨ 恢复训练特性
-
-- ✅ **自动检测检查点**：自动找到最新的检查点文件
-- ✅ **完整状态恢复**：恢复模型、优化器、学习率调度器状态
-- ✅ **验证机制**：验证检查点文件完整性
-- ✅ **灵活配置**：支持指定检查点文件或训练目录
-- ✅ **PyCharm友好**：支持在IDE中直接运行
-- ✅ **训练历史**：正确处理训练历史记录
-
-#### 🎯 典型使用场景
-
-```yaml
-# 场景1：从第50轮继续训练到100轮
-training:
-  epochs: 100
-resume:
-  enabled: true
-  auto_find_latest: true
-
-# 场景2：指定特定的检查点文件
-resume:
-  enabled: true
-  checkpoint_path: "models/checkpoints/train_20241220_143022/checkpoint_epoch_50.pth"
-
-# 场景3：指定训练目录，自动找最新检查点
-resume:
-  enabled: true
-  train_dir: "train_20241220_143022"
+python scripts/training/resume_training.py
 ```
+
+恢复训练特性：
+- 🔍 **智能检查点查找** - 自动找到最新或指定的检查点
+- 🔄 **完整状态恢复** - 恢复模型、优化器、调度器状态
+- ✅ **验证机制** - 检查点完整性和配置兼容性验证
+- 📊 **训练监控** - 实时进度和预计剩余时间显示
+
+**详细使用说明请查看：** `scripts/training/README.md`
 
 ### 5. 自动可视化分析
 
-**🎉 功能：训练完成后自动生成完整的分析图表！**
+**� 专业的可视化工具集**
 
-训练脚本会在训练结束后自动生成6张专业分析图表：
+训练完成后自动生成专业分析图表，同时提供独立的可视化工具：
 
-#### 📊 自动生成的图表
-1. **training_history.png** - 训练历史分析（2x2子图）
-   - 训练损失 vs 验证损失
-   - 训练准确率 vs 验证准确率
-   - 验证准确率详细视图（带最佳点标记）
-   - 过拟合分析（训练与验证的差距）
-
-2. **confusion_matrix.png** - 标准混淆矩阵（显示具体数量）
-3. **confusion_matrix_normalized.png** - 归一化混淆矩阵（显示百分比）
-4. **roc_curves.png** - 三个坍落度类别的ROC曲线 + AUC值
-5. **pr_curves.png** - 精确率-召回率曲线 + AP值
-6. **class_performance_radar.png** - 类别性能雷达图（精确率/召回率/F1-Score）
-
-#### 📁 图表保存位置
-```
-outputs/plots/
-├── train_YYYYMMDD_HHMMSS/  # 每次训练的时间戳目录
-└── latest/                 # 最新训练结果（便于查看）
-```
-
-#### 🧪 测试可视化功能
 ```bash
-python tests/test_visualization.py
+# 数据增强效果预览
+python scripts/visualize/visualize_augmentation.py
+
+# 学习率调度器对比
+python scripts/visualize/visualize_lr_schedule.py
+
+# 训练历史信息查看
+python scripts/visualize/visualize_training.py
 ```
+
+自动生成的图表：
+- 📈 **训练历史分析** - 损失和准确率变化曲线
+- 🎯 **混淆矩阵** - 标准和归一化混淆矩阵
+- 📊 **ROC/PR曲线** - 多类别性能评估曲线
+- 🕸️ **性能雷达图** - 各类别综合性能对比
+
+**详细使用说明请查看：** `scripts/visualize/README.md`
 
 ### 6. 模型评估
 
+**🎯 支持指定训练轮次评估**
+
 ```bash
-python scripts/evaluate_model.py
+# 方法1：指定训练轮次评估（推荐）
+# 修改 scripts/evaluate/evaluate_model.py 中的 SPECIFIC_TRAIN_PATH
+# 然后在 PyCharm 中直接运行
+
+# 方法2：使用默认模型评估
+python scripts/evaluate/evaluate_model.py
 ```
 
-生成完整的评估报告，包括：
-- 📊 多维度性能指标（精确率、召回率、F1-Score等）
-- 🔍 混淆矩阵分析和可视化
-- ❌ 错误样本分析和可视化
-- 📈 综合性能报告
+评估功能：
+- 📊 **多维度性能指标** - 精确率、召回率、F1-Score等
+- 🔍 **混淆矩阵分析** - 详细的分类错误分析
+- ❌ **错误样本诊断** - 错误样本可视化和分析
+- 📈 **综合性能报告** - HTML格式的完整评估报告
+- 🔄 **指定轮次评估** - 生成对应时间戳的结果文件夹
+
+**详细使用说明请查看：** `scripts/evaluate/README.md`
 
 ### 7. 进行预测
 
@@ -268,67 +247,6 @@ python scripts/predict.py path/to/image/directory/
 python scripts/manage_training_history.py
 ```
 
-## 🔄 恢复训练详细说明
-
-### 使用场景
-- ✅ 训练意外中断，需要从检查点继续
-- ✅ 想要增加训练轮数（如从50轮继续到100轮）
-- ✅ 调整学习率等参数后继续训练
-- ✅ 在不同设备间迁移训练
-
-### 配置说明
-
-在 `configs/training_config.yaml` 中的恢复训练配置：
-
-```yaml
-# ==================== 恢复训练配置 ====================
-resume:
-  enabled: false                        # 是否启用恢复训练模式
-  checkpoint_path: ""                   # 指定检查点文件路径（可选）
-  train_dir: ""                         # 指定训练目录名（可选）
-  auto_find_latest: true                # 自动查找最新检查点
-  continue_from_epoch: null             # 从指定epoch继续（可选）
-```
-
-### 使用方法
-
-#### 方法1：自动恢复（推荐）
-1. 修改配置文件：
-   ```yaml
-   training:
-     epochs: 100                    # 设置目标轮数
-   resume:
-     enabled: true                  # 启用恢复训练
-     auto_find_latest: true         # 自动查找最新检查点
-   ```
-
-2. 在PyCharm中运行 `scripts/resume_training.py`
-
-#### 方法2：指定检查点文件
-```yaml
-resume:
-  enabled: true
-  checkpoint_path: "models/checkpoints/train_20241220_143022/checkpoint_epoch_50.pth"
-```
-
-#### 方法3：指定训练目录
-```yaml
-resume:
-  enabled: true
-  train_dir: "train_20241220_143022"
-```
-
-### 注意事项
-- 🔍 确保数据集和配置与原训练保持一致
-- 💾 检查点文件包含完整的训练状态
-- 📊 恢复训练会创建新的时间戳目录
-- 🎯 最佳模型会在新目录中更新保存
-
-功能包括：
-- 📋 查看所有训练和评估历史
-- 📊 比较不同训练的性能
-- 📄 查看历史训练的配置参数和日志
-- 🧹 清理旧的训练结果，节省空间
 
 ## 📊 训练输出示例
 
@@ -370,13 +288,6 @@ Epoch 1/20 完成:
   🎉 新的最佳验证精度: 72.45% (模型已保存)
 ```
 
-## 🎯 模型性能
-
-- **输入尺寸**: 224×224×3
-- **类别数量**: 3
-- **数据增强**: 随机翻转、旋转、色域变换
-- **优化器**: Adam
-- **学习率调度**: StepLR
 
 ## 🔧 项目特色
 

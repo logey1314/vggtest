@@ -5,8 +5,8 @@ data:
   data_dir: "data/raw"                    # 原始图像数据存放目录
   annotation_file: "data/annotations/cls_train.txt"  # 标注文件路径（格式：类别;图像路径）
   input_shape: [224, 224]                # 输入图像尺寸 [高度, 宽度]，VGG16标准输入224x224
-  num_classes: 3                         # 分类类别数量（坍落度三个范围）
-  class_names: ["class1_125-175", "class2_180-230", "class3_233-285"]  # 类别名称列表
+  num_classes: 4                         # 分类类别数量（坍落度三个范围）
+  class_names: ["1_125-160", "2_160-200", "3_205-240","4_250-285"]  # 类别名称列表
   train_val_split: 0.8                   # 训练集比例，0.7表示70%训练30%验证
   random_seed: 10101                     # 数据集划分的随机种子，确保结果可复现
   stratified_split: false                 # 是否使用分层采样划分数据集
@@ -18,7 +18,7 @@ dataloader:
   batch_size: 4          # 批次大小：每次训练处理的图像数量
                          # 小值：内存占用少，训练稳定，但速度慢
                          # 大值：训练快，但需要更多内存，可能不稳定
-  num_workers: 0         # 数据加载线程数：0表示主线程加载
+  num_workers: 2         # 数据加载线程数：0表示主线程加载
                          # Windows建议设为0，Linux可设为2-4加快加载
   shuffle: true          # 是否打乱数据顺序：true可提高训练效果
 
@@ -59,7 +59,7 @@ training:
                                          # false: 使用手动设置的权重
 
     # 手动权重设置（当auto_weight=false时使用）
-    manual_weights: [1.0, 1.0, 1.0]     # 手动设置各类别权重
+    manual_weights: [1.0, 1.0, 1.0]     # 手动设置各类别权重  修改分类注意
 
     # Focal Loss 专用参数
     focal_alpha: 1.0                     # Focal Loss的alpha参数
@@ -99,7 +99,7 @@ save:
   save_best_only: true                 # 是否只保存最佳模型
                                          # false: 保存所有epoch的模型（占用更多空间）
                                          # true: 只保存验证精度最高的模型（节省空间）
-  save_frequency: 100                      # 保存频率：每隔多少个epoch保存一次
+  save_frequency: 50                      # 保存频率：每隔多少个epoch保存一次
                                          # 1: 每个epoch都保存，2: 每2个epoch保存一次
   save_checkpoint_every_epoch: false      # 是否每个epoch都保存检查点（用于恢复训练）
 
