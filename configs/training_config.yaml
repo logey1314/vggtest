@@ -1,4 +1,4 @@
-# VGG16 训练配置文件 - 混凝土坍落度识别项目  图标  混淆矩阵  归一化
+# 多模型训练配置文件 - 混凝土坍落度识别项目
 
 # ==================== 数据相关配置 ====================
 data:
@@ -9,7 +9,7 @@ data:
   class_names: ["1_125-160", "2_160-200", "3_205-240","4_250-285"]  # 类别名称列表
   train_val_split: 0.8                   # 训练集比例，0.7表示70%训练30%验证
   random_seed: 10101                     # 数据集划分的随机种子，确保结果可复现
-  stratified_split: false                 # 是否使用分层采样划分数据集
+  stratified_split: true                 # 是否使用分层采样划分数据集
                                          # true: 确保训练集和验证集的类别比例一致
                                          # false: 随机划分
 
@@ -24,13 +24,22 @@ dataloader:
 
 # ==================== 模型结构配置 ====================
 model:
-  name: "vgg16"                          # 模型名称
+  name: "vgg16"                          # 模型名称：vgg16, resnet18, resnet50
   pretrained: true                      # 是否使用预训练权重
                                          # false: 从头开始训练（需要更多数据和时间）
                                          # true: 使用ImageNet预训练权重（推荐，收敛快）
-  pretrained_path: "models/pretrained"   # 预训练权重文件存放目录
   dropout: 0.5                          # Dropout比例：防止过拟合
                                          # 0.0-1.0，越大越能防止过拟合但可能欠拟合
+
+  # VGG特定配置
+  vgg:
+    progress: true                       # 是否显示预训练权重下载进度
+    model_dir: "models/pretrained"       # 预训练权重文件存放目录
+
+  # ResNet特定配置
+  resnet:
+    replace_stride_with_dilation: [false, false, false]  # 是否用膨胀卷积替换步长
+    zero_init_residual: false           # 是否对残差块的最后一个BN层进行零初始化
 
 # ==================== 训练过程配置 ====================
 training:
@@ -38,60 +47,61 @@ training:
                                          # 从头训练建议80-200，预训练可用20-50
   learning_rate: 0.0001                   # 初始学习率：控制参数更新步长
                                          # 从头训练：0.001-0.01，预训练：0.0001-0.001
-  optimizer: "Adam"                      # 优化器：参数更新算法
-                                         # 支持: Adam, SGD, AdamW, RMSprop
-                                         # Adam: 自适应学习率，适合大多数情况
-                                         # SGD: 经典梯度下降，需要调整学习率
-                                         # AdamW: Adam的改进版，更好的权重衰减
-                                         # RMSprop: 适合RNN等循环网络
+  # ==================== 优化器配置 ====================
+  optimizer:
+    name: "Adam"                         # 优化器类型：Adam, SGD, AdamW, RMSprop, Adagrad
+    params:
+      lr: 0.0001                         # 学习率（会被上面的learning_rate覆盖）
+      weight_decay: 0.0001               # 权重衰减（L2正则化）
+      # Adam特定参数
+      betas: [0.9, 0.999]               # Adam的beta参数
+      eps: 1e-8                         # 数值稳定性参数
+      # SGD特定参数
+      momentum: 0.9                     # SGD动量
+      nesterov: false                   # 是否使用Nesterov动量
 
   # ==================== 损失函数配置 ====================
   loss_function:
-    name: "CrossEntropyLoss"             # 损失函数类型（先测试分层采样效果）
-                                         # 支持: CrossEntropyLoss, WeightedCrossEntropyLoss, FocalLoss
-                                         # CrossEntropyLoss: 标准交叉熵，适合平衡数据
-                                         # WeightedCrossEntropyLoss: 加权交叉熵，适合不平衡数据
-                                         # FocalLoss: 专门处理极度不平衡数据
-
-    # 自动权重计算配置（WeightedCrossEntropyLoss使用）
-    auto_weight: false                    # 是否自动计算类别权重
-                                         # true: 根据样本数量自动计算权重
-                                         # false: 使用手动设置的权重
-
-    # 手动权重设置（当auto_weight=false时使用）
-    manual_weights: [1.0, 1.0, 1.0]     # 手动设置各类别权重  修改分类注意
-
-    # Focal Loss 专用参数
-    focal_alpha: 1.0                     # Focal Loss的alpha参数
-    focal_gamma: 2.0                     # Focal Loss的gamma参数（聚焦参数）
-
+    name: "WeightedCrossEntropyLoss"     # 损失函数类型
+                                         # CrossEntropyLoss: 标准交叉熵
+                                         # WeightedCrossEntropyLoss: 加权交叉熵（自动处理类别不平衡）
+                                         # FocalLoss: Focal Loss（专门处理类别不平衡）
+                                         # LabelSmoothingCrossEntropy: 标签平滑交叉熵
+    params:
+      auto_weight: true                  # 是否自动计算类别权重
+      label_smoothing: 0.0               # 标签平滑参数（0.0-0.3）
+      # FocalLoss特定参数
+      focal_alpha: 1.0                   # Focal Loss的alpha参数
+      focal_gamma: 2.0                   # Focal Loss的gamma参数
   # ==================== 学习率调度策略 ====================
-  # 学习率调度器：训练过程中动态调整学习率
-  # 可选类型: StepLR, MultiStepLR, CosineAnnealingLR, ReduceLROnPlateau, None
   scheduler:
-    name: "none"            # 当前使用的调度器类型
-
-    # StepLR: 固定间隔降低学习率
-    step_lr:
-      step_size: 1                       # 每隔7个epoch降低一次学习率
-      gamma: 0.1                         # 学习率衰减倍数（新学习率 = 旧学习率 × 0.5）
-
-    # MultiStepLR: 在指定epoch降低学习率
-    multi_step_lr:
-      milestones: [10, 15]               # 在第10和15个epoch时降低学习率
-      gamma: 0.1                         # 学习率衰减倍数（×0.1）
-
-    # CosineAnnealingLR: 余弦退火调度（推荐）
-    cosine_annealing_lr:
+    name: "CosineAnnealingLR"            # 调度器类型：StepLR, MultiStepLR, CosineAnnealingLR, ReduceLROnPlateau, None
+    params:
+      # CosineAnnealingLR参数
       T_max: "auto"                      # 余弦周期长度，"auto"表示自动使用总epoch数
-      eta_min: 1e-6                      # 最小学习率（1e-6 = 0.000001）
+      eta_min: 1e-6                      # 最小学习率
 
-    # ReduceLROnPlateau: 根据验证指标自适应调整
-    reduce_lr_on_plateau:
-      mode: "min"                        # 监控模式："min"表示指标越小越好（如loss）
+      # StepLR参数
+      step_size: 7                       # 每隔多少个epoch降低学习率
+      gamma: 0.5                         # 学习率衰减倍数
+
+      # MultiStepLR参数
+      milestones: [10, 15]               # 在指定epoch降低学习率
+
+      # ReduceLROnPlateau参数
+      mode: "min"                        # 监控模式："min"表示指标越小越好
       factor: 0.5                        # 学习率衰减倍数
-      patience: 3                        # 容忍epochs数：指标3个epoch不改善就降低学习率
-      verbose: true                      # 是否打印学习率变化信息
+      patience: 3                        # 容忍epochs数
+      threshold: 1e-4                    # 改善阈值
+      cooldown: 0                        # 冷却期
+      min_lr: 0                          # 最小学习率
+
+      # ExponentialLR参数
+      # gamma: 0.95                      # 指数衰减因子
+
+      # CosineAnnealingWarmRestarts参数
+      T_0: 10                            # 第一次重启的周期长度
+      T_mult: 1                          # 周期长度倍增因子
 
 # ==================== 模型保存配置 ====================
 save:

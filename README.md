@@ -1,25 +1,32 @@
-# VGG16 图像分类项目
+# 多模型深度学习图像分类项目
 
-基于 PyTorch 和 VGG16 网络的三分类图像识别项目，具有详细的训练日志和可视化功能。
+基于 PyTorch 的多架构图像分类项目，支持 VGG16、ResNet 等多种模型，具有完整的工厂系统、详细的训练日志和可视化功能。
 
 ## ✨ 功能特点
 
 ### 🎯 核心功能
-- ✅ **VGG16深度学习模型** - 基于ImageNet预训练的混凝土坍落度分类
+- ✅ **多模型架构支持** - VGG16、ResNet18、ResNet50等多种深度学习模型
+- ✅ **工厂系统设计** - 统一的模型、优化器、调度器、损失函数创建接口
+- ✅ **配置驱动训练** - 通过YAML配置文件灵活切换所有训练组件
 - ✅ **多分类坍落度识别** - 精确识别125-285mm范围内的坍落度等级
 - ✅ **智能数据增强** - 多种增强策略提升模型泛化能力
 - ✅ **自动检查点管理** - 训练过程自动保存，支持断点续训
 - ✅ **专业评估体系** - 多维度性能分析和错误样本诊断
 
 ### 🛠️ 模块化架构
+- ✅ **模型工厂模块** - 统一的多模型创建和管理接口
+- ✅ **训练组件工厂** - 优化器、调度器、损失函数的工厂系统
 - ✅ **训练管理模块** - 完整的训练和恢复训练功能
 - ✅ **评估分析模块** - 支持指定轮次评估和综合性能分析
 - ✅ **可视化工具模块** - 数据增强预览、学习率对比、训练历史查看
 - ✅ **自动化流程** - 训练完成自动生成专业分析图表
 
 ### 📊 技术特性
+- ✅ **多模型支持** - VGG16、ResNet18、ResNet50，易于扩展新模型
+- ✅ **多组件支持** - 5种优化器、6种调度器、4种损失函数
 - ✅ **PyCharm友好** - 所有脚本支持IDE直接运行
-- ✅ **配置驱动** - 灵活的YAML配置文件管理
+- ✅ **配置驱动** - 完全通过YAML配置文件控制训练过程
+- ✅ **工厂模式** - 统一的组件创建接口，支持自定义扩展
 - ✅ **模块化设计** - 每个功能模块都有详细的使用说明
 - ✅ **测试覆盖** - 完整的功能测试确保代码质量
 
@@ -32,14 +39,21 @@ vgg_test/
 │
 ├── src/                        # 源代码目录
 │   ├── __init__.py
-│   ├── models/                 # 模型定义
+│   ├── models/                 # 模型定义和工厂
 │   │   ├── __init__.py
-│   │   └── vgg.py             # VGG16 网络定义
+│   │   ├── vgg.py             # VGG16 网络定义
+│   │   ├── resnet.py          # ResNet 网络定义
+│   │   ├── model_factory.py   # 模型工厂
+│   │   └── README.md          # 模型模块说明
+│   ├── training/               # 训练组件工厂
+│   │   ├── __init__.py
+│   │   ├── optimizer_factory.py # 优化器工厂
+│   │   ├── scheduler_factory.py # 学习率调度器工厂
+│   │   ├── loss_factory.py    # 损失函数工厂
+│   │   └── README.md          # 训练组件说明
 │   ├── data/                   # 数据处理
 │   │   ├── __init__.py
 │   │   └── dataset.py         # 数据集处理模块
-│   ├── training/               # 训练相关
-│   │   └── __init__.py
 │   ├── evaluation/             # 模型评估模块
 │   │   ├── __init__.py
 │   │   ├── metrics.py         # 评估指标计算
@@ -149,7 +163,38 @@ conda install -c conda-forge fonts-conda-ecosystem
 python scripts/generate_annotations.py
 ```
 
-### 3. 开始训练
+### 3. 选择模型和配置
+
+在 `configs/training_config.yaml` 中配置模型和训练参数：
+
+```yaml
+# 模型配置
+model:
+  name: "resnet50"              # 可选：vgg16, resnet18, resnet50
+  pretrained: true              # 使用预训练权重
+  dropout: 0.5                  # Dropout概率
+
+# 训练配置
+training:
+  optimizer:
+    name: "AdamW"               # 可选：Adam, SGD, AdamW, RMSprop
+    params:
+      lr: 0.001
+      weight_decay: 0.01
+
+  scheduler:
+    name: "CosineAnnealingLR"   # 可选：StepLR, CosineAnnealingLR等
+    params:
+      T_max: "auto"
+      eta_min: 1e-6
+
+  loss_function:
+    name: "WeightedCrossEntropyLoss"  # 可选：CrossEntropyLoss, FocalLoss等
+    params:
+      auto_weight: true
+```
+
+### 4. 开始训练
 
 ```bash
 python scripts/train.py
@@ -157,13 +202,15 @@ python scripts/train.py
 
 训练过程中会显示：
 - 📊 数据集统计信息
-- 🖥️ 设备和模型信息
+- 🤖 动态模型信息（根据配置显示）
+- ⚙️ 优化器和调度器配置
+- 🎯 损失函数配置
 - 🚀 实时训练进度条
 - 📈 每个epoch的损失和精度
 - 🎉 最佳模型自动保存
 - 💾 定期保存检查点文件
 
-### 4. 恢复训练（从检查点继续训练）
+### 5. 恢复训练（从检查点继续训练）
 
 **🔄 智能训练管理**
 
@@ -291,6 +338,18 @@ Epoch 1/20 完成:
 
 ## 🔧 项目特色
 
+### 🏭 工厂系统设计
+- **统一接口**: 所有组件通过工厂模式创建，接口一致
+- **配置驱动**: 完全通过YAML配置文件控制所有训练组件
+- **易于扩展**: 支持注册自定义模型、优化器、调度器、损失函数
+- **类型安全**: 统一的参数验证和错误处理机制
+
+### 🤖 多模型支持
+- **VGG16**: 经典架构，适合高精度要求的场景
+- **ResNet18**: 轻量级，适合快速实验和资源受限环境
+- **ResNet50**: 性能与效率平衡，大多数任务的首选
+- **灵活切换**: 仅需修改配置文件即可切换模型
+
 ### 模块化设计
 - **清晰的代码组织**: 按功能模块分离代码
 - **可重用组件**: 模型、数据处理、工具函数独立封装
@@ -315,12 +374,73 @@ Epoch 1/20 完成:
 - **历史管理脚本**: 查看、比较、清理训练历史
 - **数据处理脚本**: 自动生成标注文件，数据验证
 
+## 📊 模型对比
+
+### 支持的模型架构
+
+| 模型 | 参数量 | 训练速度 | 准确率 | 内存占用 | 推荐场景 |
+|------|--------|----------|--------|----------|----------|
+| VGG16 | ~138M | 慢 | 高 | 高 | 高精度要求，充足资源 |
+| ResNet18 | ~11M | 快 | 中等 | 低 | 快速实验，资源受限 |
+| ResNet50 | ~25M | 中等 | 高 | 中等 | 通用场景，性能平衡 |
+
+### 支持的训练组件
+
+| 组件类型 | 支持选项 | 推荐配置 |
+|----------|----------|----------|
+| **优化器** | Adam, SGD, AdamW, RMSprop, Adagrad | AdamW (大模型), Adam (通用) |
+| **调度器** | StepLR, CosineAnnealingLR, ReduceLROnPlateau等 | CosineAnnealingLR |
+| **损失函数** | CrossEntropy, WeightedCrossEntropy, FocalLoss等 | WeightedCrossEntropy (不平衡数据) |
+
+### 配置建议
+
+**快速实验**:
+```yaml
+model:
+  name: "resnet18"
+  pretrained: true
+training:
+  optimizer:
+    name: "Adam"
+  scheduler:
+    name: "StepLR"
+```
+
+**生产环境**:
+```yaml
+model:
+  name: "resnet50"
+  pretrained: true
+training:
+  optimizer:
+    name: "AdamW"
+  scheduler:
+    name: "CosineAnnealingLR"
+  loss_function:
+    name: "WeightedCrossEntropyLoss"
+```
+
+**高精度要求**:
+```yaml
+model:
+  name: "vgg16"
+  pretrained: true
+  dropout: 0.5
+training:
+  optimizer:
+    name: "Adam"
+  loss_function:
+    name: "FocalLoss"
+```
+
 ## 📝 注意事项
 
-1. 确保GPU内存足够（建议8GB以上）
-2. 根据数据集大小调整batch_size
-3. 可根据需要修改类别名称和数量
-4. 训练过程中会自动保存检查点，可随时中断和恢复
+1. **硬件要求**: 确保GPU内存足够（VGG16需要8GB+，ResNet可用4GB+）
+2. **批次大小**: 根据GPU内存和模型大小调整batch_size
+3. **模型选择**: 根据精度要求和资源限制选择合适的模型
+4. **配置文件**: 修改类别数量时需同步更新class_names
+5. **预训练权重**: 首次使用会自动下载，需要网络连接
+6. **检查点管理**: 训练过程中会自动保存检查点，可随时中断和恢复
 
 ## 🤝 贡献
 

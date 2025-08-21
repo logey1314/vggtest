@@ -13,13 +13,13 @@ from typing import Optional, Tuple, Dict
 def extract_timestamp_from_path(path: str) -> Optional[str]:
     """
     从路径中提取时间戳
-    
+
     Args:
         path (str): 包含时间戳的路径
-        
+
     Returns:
         str: 提取的时间戳，格式为 YYYYMMDD_HHMMSS，如果未找到返回None
-        
+
     Examples:
         >>> extract_timestamp_from_path("/var/yjs/zes/vgg/outputs/logs/train_20250820_074155/")
         "20250820_074155"
@@ -29,7 +29,7 @@ def extract_timestamp_from_path(path: str) -> Optional[str]:
     # 匹配时间戳格式：YYYYMMDD_HHMMSS
     timestamp_pattern = r'(\d{8}_\d{6})'
     match = re.search(timestamp_pattern, path)
-    
+
     if match:
         return match.group(1)
     else:
@@ -40,38 +40,38 @@ def extract_timestamp_from_path(path: str) -> Optional[str]:
 def validate_train_path(train_path: str) -> bool:
     """
     验证训练路径是否有效
-    
+
     Args:
         train_path (str): 训练路径
-        
+
     Returns:
         bool: 路径是否有效
     """
     if not train_path:
         return False
-        
+
     # 检查路径是否存在
     if not os.path.exists(train_path):
         print(f"❌ 指定的训练路径不存在: {train_path}")
         return False
-    
+
     # 检查是否包含时间戳
     timestamp = extract_timestamp_from_path(train_path)
     if not timestamp:
         print(f"❌ 路径中未找到有效的时间戳格式: {train_path}")
         return False
-    
+
     return True
 
 
 def find_model_file(project_root: str, timestamp: str) -> Optional[str]:
     """
     根据时间戳查找对应的模型文件
-    
+
     Args:
         project_root (str): 项目根目录
         timestamp (str): 时间戳，格式为 YYYYMMDD_HHMMSS
-        
+
     Returns:
         str: 模型文件路径，如果未找到返回None
     """
@@ -84,13 +84,13 @@ def find_model_file(project_root: str, timestamp: str) -> Optional[str]:
         # 3. 恢复训练目录中的模型
         os.path.join(project_root, 'models', 'checkpoints', f'resume_{timestamp}', 'best_model.pth'),
     ]
-    
+
     # 检查直接的最佳模型文件
     for path in possible_paths[:1] + possible_paths[2:]:
         if os.path.exists(path):
             print(f"✅ 找到模型文件: {path}")
             return path
-    
+
     # 检查检查点目录中的文件
     checkpoint_dir = possible_paths[1]
     if os.path.exists(checkpoint_dir):
@@ -99,7 +99,7 @@ def find_model_file(project_root: str, timestamp: str) -> Optional[str]:
         if os.path.exists(best_model_path):
             print(f"✅ 找到模型文件: {best_model_path}")
             return best_model_path
-        
+
         # 查找检查点文件
         checkpoint_files = glob.glob(os.path.join(checkpoint_dir, 'checkpoint_epoch_*.pth'))
         if checkpoint_files:
@@ -108,35 +108,35 @@ def find_model_file(project_root: str, timestamp: str) -> Optional[str]:
             latest_checkpoint = checkpoint_files[-1]
             print(f"✅ 找到检查点文件: {latest_checkpoint}")
             return latest_checkpoint
-    
+
     print(f"❌ 未找到时间戳 {timestamp} 对应的模型文件")
     print(f"   检查的路径包括:")
     for path in possible_paths:
         print(f"   - {path}")
-    
+
     return None
 
 
 def get_corresponding_model_path(train_path: str, project_root: str) -> Optional[str]:
     """
     根据训练路径获取对应的模型文件路径
-    
+
     Args:
         train_path (str): 训练路径
         project_root (str): 项目根目录
-        
+
     Returns:
         str: 模型文件路径，如果未找到返回None
     """
     # 验证训练路径
     if not validate_train_path(train_path):
         return None
-    
+
     # 提取时间戳
     timestamp = extract_timestamp_from_path(train_path)
     if not timestamp:
         return None
-    
+
     # 查找模型文件
     model_path = find_model_file(project_root, timestamp)
     return model_path

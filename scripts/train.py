@@ -1,5 +1,6 @@
 """
-VGG16 图像分类训练脚本
+多模型图像分类训练脚本
+支持VGG16、ResNet等多种模型架构
 """
 import sys
 import os
@@ -7,7 +8,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import time
 from tqdm import tqdm
@@ -17,36 +17,14 @@ import datetime
 import logging
 import shutil
 
-from src.models.vgg import vgg16
+# 导入工厂系统
+from src.models import create_model
+from src.training import create_optimizer, create_scheduler, create_loss_function
 from src.data.dataset import DataGenerator
 from src.utils.visualization import generate_all_plots
 
 
-class FocalLoss(nn.Module):
-    """
-    Focal Loss实现，专门处理类别不平衡问题
-    论文: https://arxiv.org/abs/1708.02002
-    """
-    def __init__(self, alpha=1.0, gamma=2.0, reduction='mean'):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.reduction = reduction
 
-    def forward(self, inputs, targets):
-        # 计算交叉熵损失
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
-        # 计算概率
-        pt = torch.exp(-ce_loss)
-        # 计算focal loss
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
-
-        if self.reduction == 'mean':
-            return focal_loss.mean()
-        elif self.reduction == 'sum':
-            return focal_loss.sum()
-        else:
-            return focal_loss
 
 def load_config(config_path):
     """加载YAML配置文件"""
@@ -201,40 +179,7 @@ def main():
     NUM_WORKERS = config['dataloader']['num_workers']
     SHUFFLE_TRAIN = config['dataloader']['shuffle']
 
-    # 学习率调度器配置
-    SCHEDULER_TYPE = config['training']['scheduler']['name']
 
-    # 从配置文件读取调度器参数
-    scheduler_config = config['training']['scheduler']
-
-    # 处理CosineAnnealingLR的T_max参数
-    cosine_config = scheduler_config.get('cosine_annealing_lr', {}).copy()  # 创建副本避免修改原配置
-    if cosine_config.get('T_max') == 'auto':
-        cosine_config['T_max'] = EPOCHS  # 自动使用总epoch数
-
-    # 确保eta_min是数字类型
-    if 'eta_min' in cosine_config:
-        eta_min_val = cosine_config['eta_min']
-        if isinstance(eta_min_val, str):
-            cosine_config['eta_min'] = float(eta_min_val)  # 转换字符串为浮点数
-
-    SCHEDULER_CONFIGS = {
-        'StepLR': scheduler_config.get('step_lr', {
-            'step_size': 7,
-            'gamma': 0.5
-        }),
-        'MultiStepLR': scheduler_config.get('multi_step_lr', {
-            'milestones': [10, 15],
-            'gamma': 0.1
-        }),
-        'CosineAnnealingLR': cosine_config,
-        'ReduceLROnPlateau': scheduler_config.get('reduce_lr_on_plateau', {
-            'mode': 'min',
-            'factor': 0.5,
-            'patience': 3,
-            'verbose': True
-        })
-    }
 
     # 数据增强配置
     aug_config = config['augmentation']
@@ -265,13 +210,7 @@ def main():
 
     # 路径配置
     ANNOTATION_PATH = config['data']['annotation_file']
-    PRETRAINED_MODEL_DIR = config['model']['pretrained_path']
     CHECKPOINT_DIR = config['save']['checkpoint_dir']
-
-    # 模型配置
-    MODEL_NAME = config['model']['name']
-    USE_PRETRAINED = config['model']['pretrained']
-    DROPOUT = config['model']['dropout']
 
     # 保存配置
     SAVE_BEST_ONLY = config['save']['save_best_only']
@@ -280,20 +219,6 @@ def main():
 
     # 日志配置
     VERBOSE = config['logging']['verbose']
-
-    # 训练配置
-    OPTIMIZER_NAME = config['training']['optimizer']
-
-    # 损失函数配置
-    LOSS_FUNCTION_NAME = config['training']['loss_function']['name']
-
-    # 根据损失函数类型读取相应配置
-    if LOSS_FUNCTION_NAME == "WeightedCrossEntropyLoss":
-        AUTO_WEIGHT = config['training']['loss_function']['auto_weight']
-        MANUAL_WEIGHTS = config['training']['loss_function']['manual_weights']
-    elif LOSS_FUNCTION_NAME == "FocalLoss":
-        FOCAL_ALPHA = config['training']['loss_function']['focal_alpha']
-        FOCAL_GAMMA = config['training']['loss_function']['focal_gamma']
 
     # 数据配置
     DATA_DIR = config['data']['data_dir']
@@ -305,7 +230,6 @@ def main():
 
     # 转换为绝对路径
     annotation_path = os.path.join(project_root, ANNOTATION_PATH)
-    pretrained_model_dir = os.path.join(project_root, PRETRAINED_MODEL_DIR)
 
     # 创建时间戳目录结构
     base_checkpoint_dir = os.path.join(project_root, CHECKPOINT_DIR)
@@ -462,87 +386,57 @@ def main():
         logger.info(f"GPU内存: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
 
     print(f"\n🏗️  构建网络:")
-    net = vgg16(USE_PRETRAINED, progress=True, num_classes=NUM_CLASSES, model_dir=pretrained_model_dir, dropout=DROPOUT)
+
+    # 使用模型工厂创建模型
+    model_config = config['model'].copy()
+    model_config['num_classes'] = NUM_CLASSES
+    net = create_model(model_config)
     net.to(device)
 
-    # 计算模型参数量
-    total_params = sum(p.numel() for p in net.parameters())
-    trainable_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
-    print(f"   模型参数总量: {total_params:,}")
-    print(f"   可训练参数: {trainable_params:,}")
+    # 获取模型信息
+    if hasattr(net, 'get_parameter_count'):
+        param_info = net.get_parameter_count()
+        total_params = param_info['total']
+        trainable_params = param_info['trainable']
+    else:
+        total_params = sum(p.numel() for p in net.parameters())
+        trainable_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
+
+    # 获取模型名称
+    model_name = net.get_name() if hasattr(net, 'get_name') else config['model']['name'].upper()
 
     # 记录模型信息到日志
     logger.info("="*50)
     logger.info("🏗️ 模型信息")
     logger.info("="*50)
-    logger.info(f"模型名称: VGG16")
+    logger.info(f"模型名称: {model_name}")
     logger.info(f"类别数量: {NUM_CLASSES}")
-    logger.info(f"使用预训练: {USE_PRETRAINED}")
+    logger.info(f"使用预训练: {config['model']['pretrained']}")
     logger.info(f"模型参数总量: {total_params:,}")
     logger.info(f"可训练参数: {trainable_params:,}")
 
     # ==================== 优化器和学习率调度 ====================
-    # 根据配置创建优化器
-    if OPTIMIZER_NAME.lower() == 'adam':
-        optim = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
-    elif OPTIMIZER_NAME.lower() == 'sgd':
-        optim = torch.optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
-    elif OPTIMIZER_NAME.lower() == 'adamw':
-        optim = torch.optim.AdamW(net.parameters(), lr=LEARNING_RATE)
-    elif OPTIMIZER_NAME.lower() == 'rmsprop':
-        optim = torch.optim.RMSprop(net.parameters(), lr=LEARNING_RATE)
-    else:
-        print(f"⚠️  未知的优化器类型: {OPTIMIZER_NAME}，使用默认Adam")
-        optim = torch.optim.Adam(net.parameters(), lr=LEARNING_RATE)
+    # 使用优化器工厂创建优化器
+    optimizer_config = config['training']['optimizer'].copy()
+    optimizer_config['params']['lr'] = LEARNING_RATE  # 使用配置文件中的学习率
+    optim = create_optimizer(net, optimizer_config)
 
-    # 创建学习率调度器
-    scheduler = None
-    if SCHEDULER_TYPE == 'StepLR':
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optim,
-            step_size=SCHEDULER_CONFIGS['StepLR']['step_size'],
-            gamma=SCHEDULER_CONFIGS['StepLR']['gamma']
-        )
-    elif SCHEDULER_TYPE == 'MultiStepLR':
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            optim,
-            milestones=SCHEDULER_CONFIGS['MultiStepLR']['milestones'],
-            gamma=SCHEDULER_CONFIGS['MultiStepLR']['gamma']
-        )
-    elif SCHEDULER_TYPE == 'CosineAnnealingLR':
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optim,
-            T_max=SCHEDULER_CONFIGS['CosineAnnealingLR']['T_max'],
-            eta_min=SCHEDULER_CONFIGS['CosineAnnealingLR']['eta_min']
-        )
-    elif SCHEDULER_TYPE == 'ReduceLROnPlateau':
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optim,
-            mode=SCHEDULER_CONFIGS['ReduceLROnPlateau']['mode'],
-            factor=SCHEDULER_CONFIGS['ReduceLROnPlateau']['factor'],
-            patience=SCHEDULER_CONFIGS['ReduceLROnPlateau']['patience'],
-            verbose=SCHEDULER_CONFIGS['ReduceLROnPlateau']['verbose']
-        )
-    elif SCHEDULER_TYPE == 'None':
-        scheduler = None
-    else:
-        print(f"⚠️  未知的调度器类型: {SCHEDULER_TYPE}，将不使用学习率调度")
-        scheduler = None
+    # 使用调度器工厂创建学习率调度器
+    scheduler_config = config['training']['scheduler']
+    scheduler = create_scheduler(optim, scheduler_config, EPOCHS)
 
     print(f"\n⚙️  训练配置:")
-    print(f"   优化器: {OPTIMIZER_NAME}")
+    print(f"   优化器: {config['training']['optimizer']['name']}")
     print(f"   初始学习率: {LEARNING_RATE}")
     print(f"   训练轮数: {EPOCHS}")
     print(f"   批次大小: {BATCH_SIZE}")
-    print(f"   损失函数: {LOSS_FUNCTION_NAME}")
+    print(f"   损失函数: {config['training']['loss_function']['name']}")
     print(f"   保存最佳模型: {'是' if SAVE_BEST_ONLY else '否'}")
     print(f"   保存频率: 每{SAVE_FREQUENCY}个epoch" if not SAVE_CHECKPOINT_EVERY_EPOCH else "每个epoch")
     if scheduler is not None:
-        print(f"   学习率调度: {SCHEDULER_TYPE}")
-        if SCHEDULER_TYPE in SCHEDULER_CONFIGS:
-            print(f"   调度器参数: {SCHEDULER_CONFIGS[SCHEDULER_TYPE]}")
+        print(f"   学习率调度器: {config['training']['scheduler']['name']}")
     else:
-        print(f"   学习率调度: 无")
+        print(f"   学习率调度器: 无")
 
     print(f"\n🎨 数据增强配置:")
     print(f"   水平翻转: {'✅' if AUGMENTATION_CONFIG['enable_flip'] else '❌'}")
@@ -570,8 +464,10 @@ def main():
     logger.info(f"学习率: {LEARNING_RATE}")
     logger.info(f"类别数量: {NUM_CLASSES}")
     logger.info(f"输入尺寸: {INPUT_SHAPE}")
-    logger.info(f"使用预训练: {USE_PRETRAINED}")
-    logger.info(f"学习率调度器: {SCHEDULER_TYPE}")
+    logger.info(f"模型类型: {config['model']['name']}")
+    logger.info(f"使用预训练: {config['model']['pretrained']}")
+    logger.info(f"优化器: {config['training']['optimizer']['name']}")
+    logger.info(f"学习率调度器: {config['training']['scheduler']['name']}")
     logger.info(f"数据增强配置: {AUGMENTATION_CONFIG is not None}")
 
     # 训练历史记录
@@ -582,75 +478,17 @@ def main():
     best_acc = 0.0
 
     # ==================== 创建损失函数 ====================
-    def create_loss_function():
-        """根据配置创建损失函数"""
-        print(f"\n🎯 损失函数配置:")
-        print(f"   类型: {LOSS_FUNCTION_NAME}")
-
-        if LOSS_FUNCTION_NAME == "CrossEntropyLoss":
-            print(f"   使用标准交叉熵损失（无权重）")
-            criterion = nn.CrossEntropyLoss()
-            return criterion, None
-
-        elif LOSS_FUNCTION_NAME == "WeightedCrossEntropyLoss":
-            # 统计训练集中各类别样本数量（使用分层采样后的数据）
-            class_counts = [0] * NUM_CLASSES  # 动态创建类别计数列表
-            for line in train_lines:
-                class_id = int(line.split(';')[0])
-                if 0 <= class_id < NUM_CLASSES:  # 确保类别ID在有效范围内
-                    class_counts[class_id] += 1
-
-            if AUTO_WEIGHT:
-                # 自动计算类别权重（反比例权重）
-                total_samples = sum(class_counts)
-                class_weights = [total_samples / (NUM_CLASSES * count) for count in class_counts]
-                print(f"   使用自动计算权重")
-            else:
-                # 使用手动设置的权重
-                class_weights = MANUAL_WEIGHTS
-                print(f"   使用手动设置权重: {class_weights}")
-
-            class_weights_tensor = torch.FloatTensor(class_weights).to(device)
-
-            print(f"   类别分布和权重:")
-            for i, (count, weight) in enumerate(zip(class_counts, class_weights)):
-                percentage = count / total_samples * 100 if AUTO_WEIGHT else 0
-                if AUTO_WEIGHT:
-                    print(f"     类别{i}: {count:,}样本 ({percentage:.1f}%) - 权重: {weight:.3f}")
-                else:
-                    print(f"     类别{i}: 权重: {weight:.3f}")
-
-            criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
-            return criterion, class_counts if AUTO_WEIGHT else None
-
-        elif LOSS_FUNCTION_NAME == "FocalLoss":
-            print(f"   使用Focal Loss")
-            print(f"   Alpha: {FOCAL_ALPHA}, Gamma: {FOCAL_GAMMA}")
-            criterion = FocalLoss(alpha=FOCAL_ALPHA, gamma=FOCAL_GAMMA)
-            return criterion, None
-
-        else:
-            print(f"   ⚠️ 未知的损失函数类型: {LOSS_FUNCTION_NAME}，使用默认CrossEntropyLoss")
-            criterion = nn.CrossEntropyLoss()
-            return criterion, None
-
-    # 创建损失函数
-    criterion, class_counts = create_loss_function()
+    # 使用损失函数工厂创建损失函数
+    loss_config = config['training']['loss_function']
+    criterion = create_loss_function(loss_config, train_lines, NUM_CLASSES)
+    criterion.to(device)
 
     # 记录损失函数信息到日志
     logger.info("="*50)
     logger.info("🎯 损失函数配置")
     logger.info("="*50)
-    logger.info(f"损失函数类型: {LOSS_FUNCTION_NAME}")
+    logger.info(f"损失函数类型: {config['training']['loss_function']['name']}")
     logger.info(f"分层采样: {'启用' if STRATIFIED_SPLIT else '未启用'}")
-    if LOSS_FUNCTION_NAME == "WeightedCrossEntropyLoss" and 'class_counts' in locals() and class_counts:
-        total_samples = sum(class_counts)
-        for i, count in enumerate(class_counts):
-            percentage = count / total_samples * 100
-            weight = total_samples / (NUM_CLASSES * count) if AUTO_WEIGHT else MANUAL_WEIGHTS[i]
-            logger.info(f"类别{i}: {count:,}样本 ({percentage:.1f}%) - 权重: {weight:.3f}")
-    elif LOSS_FUNCTION_NAME == "FocalLoss":
-        logger.info(f"Focal Loss参数 - Alpha: {FOCAL_ALPHA}, Gamma: {FOCAL_GAMMA}")
 
     # ==================== 训练循环 ====================
     for epoch in range(EPOCHS):
@@ -691,7 +529,7 @@ def main():
             })
 
         # 学习率调度
-        if scheduler is not None and SCHEDULER_TYPE != 'ReduceLROnPlateau':
+        if scheduler is not None and not isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             scheduler.step()
         current_lr = optim.param_groups[0]['lr']
 
@@ -740,7 +578,7 @@ def main():
         val_accuracies.append(val_acc)
 
         # ReduceLROnPlateau 需要在验证后调用
-        if scheduler is not None and SCHEDULER_TYPE == 'ReduceLROnPlateau':
+        if scheduler is not None and isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
             scheduler.step(avg_val_loss)
             # 更新学习率（可能在step后发生变化）
             current_lr = optim.param_groups[0]['lr']

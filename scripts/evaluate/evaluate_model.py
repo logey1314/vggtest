@@ -183,7 +183,7 @@ def main():
     # ==================== 配置参数 ====================
     # 🎯 指定要评估的训练轮次路径（在这里修改）
     # 设置为具体路径来评估指定轮次，设置为 None 使用默认的 latest 模型
-    SPECIFIC_TRAIN_PATH = "/var/yjs/zes/vgg/outputs/logs/train_20250820_074313/"
+    SPECIFIC_TRAIN_PATH = "/var/yjs/zes/vgg/outputs/logs/train_20250821_025700/"
 
     # SPECIFIC_TRAIN_PATH = None  # 使用默认的 latest 模型
 
