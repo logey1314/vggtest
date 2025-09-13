@@ -2,10 +2,17 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="29451cb1-d41d-4023-bbd2-9f7be5daacc6" name="实验室">
-        <fileTransfer rootFolder="/var/yjs" accessType="SFTP" host="192.168.1.33" port="22" sshConfigId="ed429f12-fdf4-43de-b236-5a3633bd4adf" sshConfig="root@192.168.1.33:22 password">
+      <webServer id="880f480d-5b93-4be8-9def-ccdbfdaa96d3" name="实验室">
+        <fileTransfer rootFolder="/root" accessType="SFTP" host="192.168.1.33" port="22" sshConfigId="d35cb261-26a7-4c0d-bade-48ffa9c616fc" sshConfig="root@192.168.1.33:22 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="2e05d669-f208-4d12-aa48-1b50125208a7" name="穿透">
+        <fileTransfer rootFolder="/root" accessType="SFTP" host="60.205.112.118" port="3060" sshConfigId="bfde83d1-bcfd-4616-8be0-72e206204b7e" sshConfig="root@60.205.112.118:3060 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
         </fileTransfer>
       </webServer>

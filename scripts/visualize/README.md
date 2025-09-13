@@ -12,6 +12,11 @@ scripts/visualize/
 ├── visualize_training.py         # 训练历史信息查看工具
 ├── visualize_utils.py            # 可视化工具函数
 └── README.md                     # 本说明文档
+
+scripts/data/
+├── __init__.py                    # 模块初始化文件
+├── visualize_noise.py            # 图像噪声效果可视化工具
+└── README.md                     # 数据处理模块说明
 ```
 
 ## 🎨 工具说明
@@ -107,7 +112,30 @@ python scripts/visualize/visualize_training.py
 - 自动生成的图表类型
 - 其他可视化工具链接
 
-### 4. visualize_utils.py - 工具函数库
+### 4. 图像噪声效果可视化 (scripts/data/visualize_noise.py)
+
+**功能**: 预览不同噪声类型和强度对图像的影响效果
+
+**使用方法**:
+```bash
+python scripts/data/visualize_noise.py
+```
+
+**主要特性**:
+- 🖼️ 对比原图与不同强度噪声效果
+- 📊 生成多样本对比图表
+- ⚙️ 支持多种噪声类型组合
+- 💾 自动保存结果到 `outputs/plots/noise_effects.png`
+
+**噪声类型展示**:
+- **原图**: 无噪声处理的原始图像
+- **轻度噪声**: 仅高斯噪声，适合轻微降准确率
+- **中度噪声**: 高斯噪声 + 椒盐噪声组合
+- **重度噪声**: 多种噪声类型组合，显著降低图像质量
+
+**详细使用说明请查看：** `scripts/data/README.md`
+
+### 5. visualize_utils.py - 工具函数库
 
 **功能**: 提供通用的可视化辅助函数
 

@@ -10,6 +10,7 @@
 - ✅ **配置驱动训练** - 通过YAML配置文件灵活切换所有训练组件
 - ✅ **多分类坍落度识别** - 精确识别125-285mm范围内的坍落度等级
 - ✅ **智能数据增强** - 多种增强策略提升模型泛化能力
+- ✅ **图像噪声增强** - 像素级噪声处理，可控制降低模型准确率
 - ✅ **自动检查点管理** - 训练过程自动保存，支持断点续训
 - ✅ **专业评估体系** - 多维度性能分析和错误样本诊断
 
@@ -79,6 +80,9 @@ vgg_test/
 │   │   ├── visualize_lr_schedule.py   # 学习率调度器对比
 │   │   ├── visualize_training.py      # 训练历史信息查看
 │   │   └── README.md          # 可视化工具详细说明
+│   ├── data/                  # 数据处理工具模块
+│   │   ├── visualize_noise.py # 图像噪声效果可视化工具
+│   │   └── README.md          # 数据处理工具详细说明
 │   └── generate_annotations.py # 数据集标注生成器
 │
 ├── data/                       # 数据目录
@@ -214,6 +218,24 @@ training:
     name: "WeightedCrossEntropyLoss"  # 可选：CrossEntropyLoss, FocalLoss等
     params:
       auto_weight: true
+
+# 数据增强配置（包含图像噪声增强）
+augmentation:
+  # 传统数据增强
+  enable_flip: true
+  enable_rotation: true
+  enable_color_jitter: true
+
+  # 图像噪声增强（用于降低模型准确率）
+  noise:
+    enable_noise: false             # 是否启用噪声增强
+    noise_probability: 0.3          # 噪声应用概率
+    gaussian_noise:
+      enable: true
+      std: 0.05                     # 高斯噪声强度
+    salt_pepper_noise:
+      enable: true
+      salt_prob: 0.01               # 椒盐噪声密度
 ```
 
 ### 5. 开始训练
@@ -266,6 +288,9 @@ python scripts/visualize/visualize_lr_schedule.py
 
 # 训练历史信息查看
 python scripts/visualize/visualize_training.py
+
+# 图像噪声效果预览
+python scripts/data/visualize_noise.py
 ```
 
 自动生成的图表：
@@ -273,6 +298,7 @@ python scripts/visualize/visualize_training.py
 - 🎯 **混淆矩阵** - 标准和归一化混淆矩阵
 - 📊 **ROC/PR曲线** - 多类别性能评估曲线
 - 🕸️ **性能雷达图** - 各类别综合性能对比
+- 🔊 **噪声效果对比** - 不同噪声类型和强度的图像效果预览
 
 **详细使用说明请查看：** `scripts/visualize/README.md`
 
@@ -295,6 +321,7 @@ python scripts/evaluate/evaluate_model.py
 - ❌ **错误样本诊断** - 错误样本可视化和分析
 - 📈 **综合性能报告** - HTML格式的完整评估报告
 - 🔄 **指定轮次评估** - 生成对应时间戳的结果文件夹
+- 🎨 **深度学习特征可视化** - 特征图、Grad-CAM、激活分析等
 
 **详细使用说明请查看：** `scripts/evaluate/README.md`
 
@@ -372,6 +399,20 @@ Epoch 1/20 完成:
 - **ResNet50**: 性能与效率平衡，大多数任务的首选
 - **灵活切换**: 仅需修改配置文件即可切换模型
 
+### 🎨 智能数据增强
+- **传统增强**: 翻转、旋转、缩放、色彩抖动等几何和色彩变换
+- **图像噪声增强**: 像素级噪声处理，可控制降低模型准确率
+- **多种噪声类型**: 高斯噪声、椒盐噪声、均匀噪声、模糊噪声等
+- **配置驱动**: 通过配置文件灵活控制噪声类型和强度
+- **可视化预览**: 提供噪声效果预览工具，便于参数调整
+
+### 🔍 深度学习特征可视化
+- **特征图可视化**: 显示VGG16各卷积层的特征响应模式
+- **Grad-CAM热力图**: 可视化模型关注的图像区域，提供决策解释
+- **激活强度分析**: 分析不同类别在各层的激活模式差异
+- **错误样本特征对比**: 对比正确和错误预测的特征统计差异
+- **综合特征分析**: 自动生成完整的模型可解释性报告
+
 ### 模块化设计
 - **清晰的代码组织**: 按功能模块分离代码
 - **可重用组件**: 模型、数据处理、工具函数独立封装
@@ -395,6 +436,7 @@ Epoch 1/20 完成:
 - **可视化脚本**: 训练历史分析，模型性能评估
 - **历史管理脚本**: 查看、比较、清理训练历史
 - **数据处理脚本**: 自动生成标注文件，数据验证
+- **噪声可视化脚本**: 图像噪声效果预览和对比分析
 
 ## 📁 预训练权重管理
 

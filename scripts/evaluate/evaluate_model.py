@@ -17,7 +17,8 @@ import datetime
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.models.vgg import vgg16
+# 导入工厂系统
+from src.models import create_model
 from src.data.dataset import DataGenerator
 from src.evaluation import ReportGenerator
 from src.utils.font_manager import setup_matplotlib_font, get_font_manager
@@ -28,6 +29,7 @@ from scripts.evaluate.evaluate_utils import (
     print_path_info,
     load_training_config
 )
+
 
 
 def load_config(config_path):
@@ -44,46 +46,61 @@ def load_config(config_path):
         return None
 
 
-def load_model(model_path, num_classes=3, device='cpu'):
+def load_model(model_path, config, device='cpu'):
     """
-    加载训练好的模型
-    
+    根据配置文件加载训练好的模型
+
     Args:
         model_path (str): 模型文件路径
-        num_classes (int): 分类数量
+        config (dict): 训练配置文件
         device (str): 设备类型
-        
+
     Returns:
         torch.nn.Module: 加载的模型
     """
     print(f"📥 加载模型: {model_path}")
-    
-    # 创建模型（评估时dropout不影响结果，使用默认值即可）
-    model = vgg16(pretrained=False, num_classes=num_classes)
-    
+
+    # 从配置文件获取模型信息
+    model_config = config['model'].copy()
+    model_config['num_classes'] = config['data']['num_classes']
+    model_config['pretrained'] = False  # 评估时不需要预训练权重
+
+    print(f"🤖 模型类型: {model_config['name']}")
+    print(f"📊 分类数量: {model_config['num_classes']}")
+
+    # 使用工厂系统创建模型
+    try:
+        model = create_model(model_config)
+        print(f"✅ 模型创建成功: {model.get_name() if hasattr(model, 'get_name') else model_config['name']}")
+    except Exception as e:
+        print(f"❌ 模型创建失败: {e}")
+        return None
+
     # 加载权重
     try:
         if device == 'cpu':
             state_dict = torch.load(model_path, map_location='cpu')
         else:
             state_dict = torch.load(model_path)
-        
+
         # 处理不同的保存格式
         if isinstance(state_dict, dict) and 'model_state_dict' in state_dict:
             # 检查点格式
             model.load_state_dict(state_dict['model_state_dict'])
+            print(f"📋 加载检查点格式权重")
         else:
             # 直接模型权重格式
             model.load_state_dict(state_dict)
-        
+            print(f"📋 加载直接权重格式")
+
         model.to(device)
         model.eval()
-        
-        print(f"✅ 模型加载成功")
+
+        print(f"✅ 模型权重加载成功")
         return model
-        
+
     except Exception as e:
-        print(f"❌ 模型加载失败: {e}")
+        print(f"❌ 模型权重加载失败: {e}")
         return None
 
 
@@ -177,13 +194,61 @@ def evaluate_model(model, dataloader, device='cpu'):
     return np.array(y_true), np.array(y_pred), np.array(y_prob), image_paths
 
 
+def load_training_config(train_path, project_root):
+    """
+    加载训练时的配置文件
+
+    Args:
+        train_path (str): 训练路径
+        project_root (str): 项目根目录
+
+    Returns:
+        tuple: (config_dict, config_source)
+    """
+    config = None
+    config_source = None
+
+    if train_path:
+        # 尝试从训练路径加载配置备份
+        config_backup_path = os.path.join(train_path, 'config_backup.yaml')
+        if os.path.exists(config_backup_path):
+            try:
+                with open(config_backup_path, 'r', encoding='utf-8') as f:
+                    config = yaml.safe_load(f)
+                config_source = f"训练配置备份: {config_backup_path}"
+                print(f"✅ 从训练配置备份加载: {config_backup_path}")
+            except Exception as e:
+                print(f"⚠️  配置备份加载失败: {e}")
+
+    # 如果没有找到配置备份，使用默认配置文件
+    if config is None:
+        default_config_path = os.path.join(project_root, 'configs', 'training_config.yaml')
+        if os.path.exists(default_config_path):
+            try:
+                with open(default_config_path, 'r', encoding='utf-8') as f:
+                    config = yaml.safe_load(f)
+                config_source = f"默认配置文件: {default_config_path}"
+                print(f"✅ 从默认配置文件加载: {default_config_path}")
+            except Exception as e:
+                print(f"❌ 默认配置文件加载失败: {e}")
+                return None, None
+
+    if config:
+        print(f"📋 配置来源: {config_source}")
+        print(f"🤖 模型类型: {config['model']['name']}")
+        print(f"📊 分类数量: {config['data']['num_classes']}")
+        print(f"📏 输入尺寸: {config['data']['input_shape']}")
+
+    return config, config_source
+
+
 def main():
     """主评估函数"""
 
     # ==================== 配置参数 ====================
     # 🎯 指定要评估的训练轮次路径（在这里修改）
     # 设置为具体路径来评估指定轮次，设置为 None 使用默认的 latest 模型
-    SPECIFIC_TRAIN_PATH = "/var/yjs/zes/vgg/outputs/logs/train_20250821_025700/"
+    SPECIFIC_TRAIN_PATH = "/var/yjs/zes/vgg/outputs/logs/train_20250912_204031"
 
     # SPECIFIC_TRAIN_PATH = None  # 使用默认的 latest 模型
 
@@ -254,8 +319,7 @@ def main():
         return
 
     # ==================== 加载模型 ====================
-    num_classes = config['data']['num_classes']
-    model = load_model(model_path, num_classes, device)
+    model = load_model(model_path, config, device)
     if model is None:
         return
 
@@ -278,7 +342,8 @@ def main():
 
     # ==================== 生成评估报告 ====================
     class_names = config['data']['class_names']
-    model_name = f"VGG16-{config['data']['num_classes']}类"
+    model_type = config['model']['name'].upper()
+    model_name = f"{model_type}-{config['data']['num_classes']}类"
 
     # 初始化报告生成器
     report_generator = ReportGenerator(class_names, model_name)
@@ -301,6 +366,9 @@ def main():
         image_paths=image_paths,
         save_dir=latest_eval_dir
     )
+
+    # 特征可视化分析已移至独立脚本 scripts/evaluate/feature_visualization.py
+    # 如需进行特征分析，请单独运行该脚本
 
     # ==================== 输出关键结果 ====================
     print("\n" + "="*80)

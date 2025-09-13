@@ -5,7 +5,7 @@
 
 import sys
 import os
-sys.path.append('.')
+sys.path.append('..')
 
 def test_loss_creation():
     """测试损失函数创建"""

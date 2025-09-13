@@ -206,6 +206,9 @@ def main():
         'value_range': aug_config.get('value_range', 1.5),
         'flip_probability': aug_config.get('flip_probability', 0.5),
         'rotation_probability': aug_config.get('rotation_probability', 0.5),
+
+        # 图像噪声增强配置
+        'noise': aug_config.get('noise', {})
     }
 
     # 路径配置
@@ -446,6 +449,14 @@ def main():
     print(f"   长宽比抖动: {AUGMENTATION_CONFIG['jitter']}")
     print(f"   翻转概率: {AUGMENTATION_CONFIG['flip_probability']}")
     print(f"   旋转概率: {AUGMENTATION_CONFIG['rotation_probability']}")
+
+    # 显示噪声增强状态
+    noise_config = AUGMENTATION_CONFIG.get('noise', {})
+    noise_enabled = noise_config.get('enable_noise', False)
+    if noise_enabled:
+        print(f"   图像噪声: ✅ 已启用")
+    else:
+        print(f"   图像噪声: ❌ 未启用")
 
     print(f"\n🚀 开始训练 (共 {EPOCHS} 个 epoch)")
     print("="*80)

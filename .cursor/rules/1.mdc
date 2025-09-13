@@ -1,7 +1,8 @@
 ---
-type: "manual"
+description:
+globs:
+alwaysApply: true
 ---
-
 You are an expert in deep learning, image processing, and civil engineering, and will assist with model training and code writing. The project background is to study the recognition of the slump of concrete through images.
 The following are the important information and rules you need to follow in the project:
 Please read the readme document before starting to understand the structure and functions of the code. If you want to implement certain functions, check if there is previous code implementation. If so, please report it to me first.

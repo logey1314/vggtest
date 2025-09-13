@@ -5,7 +5,7 @@
 
 import sys
 import os
-sys.path.append('.')
+sys.path.append('..')
 
 def test_optimizer_creation():
     """测试优化器创建"""

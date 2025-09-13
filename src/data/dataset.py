@@ -1,11 +1,12 @@
 """
 数据集处理模块
-包含数据加载、预处理和数据增强功能
+包含数据加载、预处理、数据增强和图像噪声增强功能
 """
 import cv2
 import numpy as np
 import torch.utils.data as data
 from PIL import Image
+from scipy import ndimage
 
 
 def preprocess_input(x):
@@ -64,6 +65,41 @@ class DataGenerator(data.Dataset):
             'value_range': 1.5,           # 明度变化范围
             'flip_probability': 0.5,       # 翻转概率
             'rotation_probability': 0.5,   # 旋转概率
+
+            # 图像噪声增强配置
+            'noise': {
+                'enable_noise': False,     # 是否启用噪声增强
+                'noise_probability': 0.3,  # 噪声应用概率
+                'gaussian_noise': {
+                    'enable': True,
+                    'mean': 0.0,
+                    'std': 0.05,
+                    'probability': 0.5
+                },
+                'salt_pepper_noise': {
+                    'enable': True,
+                    'salt_prob': 0.01,
+                    'pepper_prob': 0.01,
+                    'probability': 0.3
+                },
+                'uniform_noise': {
+                    'enable': True,
+                    'low': -0.05,
+                    'high': 0.05,
+                    'probability': 0.3
+                },
+                'poisson_noise': {
+                    'enable': False,
+                    'scale': 1.0,
+                    'probability': 0.2
+                },
+                'blur_noise': {
+                    'enable': True,
+                    'kernel_size': 3,
+                    'sigma': 0.5,
+                    'probability': 0.2
+                }
+            }
         }
 
         # 合并用户配置
@@ -95,6 +131,166 @@ class DataGenerator(data.Dataset):
     def rand(self, a=0, b=1):
         """生成随机数"""
         return np.random.rand() * (b - a) + a
+
+    def add_gaussian_noise(self, image_data, mean=0.0, std=0.05):
+        """
+        添加高斯噪声
+
+        Args:
+            image_data: 图像数据 (numpy数组)
+            mean: 高斯噪声均值
+            std: 高斯噪声标准差
+
+        Returns:
+            numpy.ndarray: 添加噪声后的图像数据
+        """
+        noise = np.random.normal(mean, std * 255, image_data.shape)
+        noisy_image = image_data + noise
+        return np.clip(noisy_image, 0, 255).astype(np.float32)
+
+    def add_salt_pepper_noise(self, image_data, salt_prob=0.01, pepper_prob=0.01):
+        """
+        添加椒盐噪声
+
+        Args:
+            image_data: 图像数据 (numpy数组)
+            salt_prob: 盐噪声概率（白点）
+            pepper_prob: 椒噪声概率（黑点）
+
+        Returns:
+            numpy.ndarray: 添加噪声后的图像数据
+        """
+        noisy_image = image_data.copy()
+
+        # 添加盐噪声（白点）
+        salt_mask = np.random.random(image_data.shape[:2]) < salt_prob
+        noisy_image[salt_mask] = 255
+
+        # 添加椒噪声（黑点）
+        pepper_mask = np.random.random(image_data.shape[:2]) < pepper_prob
+        noisy_image[pepper_mask] = 0
+
+        return noisy_image.astype(np.float32)
+
+    def add_uniform_noise(self, image_data, low=-0.05, high=0.05):
+        """
+        添加均匀噪声
+
+        Args:
+            image_data: 图像数据 (numpy数组)
+            low: 均匀噪声下界
+            high: 均匀噪声上界
+
+        Returns:
+            numpy.ndarray: 添加噪声后的图像数据
+        """
+        noise = np.random.uniform(low * 255, high * 255, image_data.shape)
+        noisy_image = image_data + noise
+        return np.clip(noisy_image, 0, 255).astype(np.float32)
+
+    def add_poisson_noise(self, image_data, scale=1.0):
+        """
+        添加泊松噪声
+
+        Args:
+            image_data: 图像数据 (numpy数组)
+            scale: 泊松噪声缩放因子
+
+        Returns:
+            numpy.ndarray: 添加噪声后的图像数据
+        """
+        # 将图像数据转换到合适的范围进行泊松噪声处理
+        scaled_image = image_data / 255.0 * scale
+        noisy_image = np.random.poisson(scaled_image) / scale * 255.0
+        return np.clip(noisy_image, 0, 255).astype(np.float32)
+
+    def add_blur_noise(self, image_data, kernel_size=3, sigma=0.5):
+        """
+        添加模糊噪声
+
+        Args:
+            image_data: 图像数据 (numpy数组)
+            kernel_size: 模糊核大小
+            sigma: 高斯模糊标准差
+
+        Returns:
+            numpy.ndarray: 添加噪声后的图像数据
+        """
+        blurred_image = cv2.GaussianBlur(image_data, (kernel_size, kernel_size), sigma)
+        return blurred_image.astype(np.float32)
+
+    def apply_noise_augmentation(self, image_data):
+        """
+        应用图像噪声增强
+
+        Args:
+            image_data: 图像数据 (numpy数组)
+
+        Returns:
+            numpy.ndarray: 处理后的图像数据
+        """
+        noise_config = self.aug_config.get('noise', {})
+
+        # 检查是否启用噪声增强
+        if not noise_config.get('enable_noise', False):
+            return image_data
+
+        # 检查是否应用噪声（基于概率）
+        if self.rand() > noise_config.get('noise_probability', 0.3):
+            return image_data
+
+        noisy_image = image_data.copy()
+
+        # 应用高斯噪声
+        gaussian_config = noise_config.get('gaussian_noise', {})
+        if (gaussian_config.get('enable', True) and
+            self.rand() < gaussian_config.get('probability', 0.5)):
+            noisy_image = self.add_gaussian_noise(
+                noisy_image,
+                mean=gaussian_config.get('mean', 0.0),
+                std=gaussian_config.get('std', 0.05)
+            )
+
+        # 应用椒盐噪声
+        salt_pepper_config = noise_config.get('salt_pepper_noise', {})
+        if (salt_pepper_config.get('enable', True) and
+            self.rand() < salt_pepper_config.get('probability', 0.3)):
+            noisy_image = self.add_salt_pepper_noise(
+                noisy_image,
+                salt_prob=salt_pepper_config.get('salt_prob', 0.01),
+                pepper_prob=salt_pepper_config.get('pepper_prob', 0.01)
+            )
+
+        # 应用均匀噪声
+        uniform_config = noise_config.get('uniform_noise', {})
+        if (uniform_config.get('enable', True) and
+            self.rand() < uniform_config.get('probability', 0.3)):
+            noisy_image = self.add_uniform_noise(
+                noisy_image,
+                low=uniform_config.get('low', -0.05),
+                high=uniform_config.get('high', 0.05)
+            )
+
+        # 应用泊松噪声
+        poisson_config = noise_config.get('poisson_noise', {})
+        if (poisson_config.get('enable', False) and
+            self.rand() < poisson_config.get('probability', 0.2)):
+            noisy_image = self.add_poisson_noise(
+                noisy_image,
+                scale=poisson_config.get('scale', 1.0)
+            )
+
+        # 应用模糊噪声
+        blur_config = noise_config.get('blur_noise', {})
+        if (blur_config.get('enable', True) and
+            self.rand() < blur_config.get('probability', 0.2)):
+            noisy_image = self.add_blur_noise(
+                noisy_image,
+                kernel_size=blur_config.get('kernel_size', 3),
+                sigma=blur_config.get('sigma', 0.5)
+            )
+
+        return noisy_image
 
     def get_random_data(self, image, input_shape, random=True):
         """
@@ -194,5 +390,9 @@ class DataGenerator(data.Dataset):
             image_data = cv2.cvtColor(x, cv2.COLOR_HSV2RGB) * 255
         else:
             image_data = np.array(image, np.float32)
+
+        # 应用图像噪声增强（仅在训练模式下）
+        if random:
+            image_data = self.apply_noise_augmentation(image_data)
 
         return image_data

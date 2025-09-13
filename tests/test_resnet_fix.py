@@ -5,7 +5,7 @@
 
 import sys
 import os
-sys.path.append('.')
+sys.path.append('..')
 
 def test_resnet_creation():
     """测试ResNet模型创建"""

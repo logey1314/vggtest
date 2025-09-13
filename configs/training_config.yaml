@@ -1,21 +1,27 @@
-# 多模型训练配置文件 - 混凝土坍落度识别项目
+# 多模型训练配置文件 - 混凝土坍落度识别项目   早听
 
 # ==================== 数据相关配置 ====================
 data:
-  data_dir: "data/raw"                    # 原始图像数据存放目录
+  data_dir: "data/raw/27分类"                    # 原始图像数据存放目录
   annotation_file: "data/annotations/cls_train.txt"  # 标注文件路径（格式：类别;图像路径）
   input_shape: [224, 224]                # 输入图像尺寸 [高度, 宽度]，VGG16标准输入224x224
-  num_classes: 4                         # 分类类别数量（坍落度三个范围）
-  class_names: ["1_125-160", "2_160-200", "3_205-240","4_250-285"]  # 类别名称列表
-  train_val_split: 0.8                   # 训练集比例，0.7表示70%训练30%验证
-  random_seed: 10101                     # 数据集划分的随机种子，确保结果可复现
-  stratified_split: true                 # 是否使用分层采样划分数据集
+  num_classes: 27                         # 分类类别数量（坍落度三个范围）
+  class_names: ["类别1_120-130", "类别2_131-135", "类别3_136-140","类别4_150-160",
+                "类别5_161-165","类别6_166-169","类别7_171-174","类别8_176-179",
+                "类别9_181-184","类别10_185-190","类别11_190-195","类别12_194-200",
+                "类别13_200-205","类别14_205-210","类别15_210-215","类别16_215-220",
+                "类别17_220-225","类别18_225-230","类别19_230-235","类别20_235-240",
+                 "类别21_240-250","类别22_250-260","类别23_260-265","类别24_262-270",
+                "类别25_271-275","类别26_276-280","类别27_281-285"]  # 类别名称列表
+  train_val_split: 0.6                   # 训练集比例，0.7表示70%训练30%验证
+  random_seed: 10101                     # 数据集划分的随机种子，确保结果可复现 10101
+  stratified_split: true                  # 是否使用分层采样划分数据集
                                          # true: 确保训练集和验证集的类别比例一致
                                          # false: 随机划分
 
 # ==================== 数据加载配置 ====================
 dataloader:
-  batch_size: 4          # 批次大小：每次训练处理的图像数量
+  batch_size: 8          # 批次大小：每次训练处理的图像数量
                          # 小值：内存占用少，训练稳定，但速度慢
                          # 大值：训练快，但需要更多内存，可能不稳定
   num_workers: 2         # 数据加载线程数：0表示主线程加载
@@ -24,8 +30,8 @@ dataloader:
 
 # ==================== 模型结构配置 ====================
 model:
-  name: "resnet50"                          # 模型名称：vgg16, resnet18, resnet50
-  pretrained: false                      # 是否使用预训练权重
+  name: "resnet18"                          # 模型名称：vgg16, resnet18, resnet50
+  pretrained: true                      # 是否使用预训练权重
                                          # false: 从头开始训练（需要更多数据和时间）
                                          # true: 使用ImageNet预训练权重（推荐，收敛快）
   dropout: 0.5                          # Dropout比例：防止过拟合
@@ -76,7 +82,7 @@ training:
                                          # LabelSmoothingCrossEntropy: 标签平滑交叉熵
     params:
       auto_weight: true                  # 是否自动计算类别权重
-      label_smoothing: 0.0               # 标签平滑参数（0.0-0.3）
+      label_smoothing: 0.1               # 标签平滑参数（0.0-0.3）
       # FocalLoss特定参数
       focal_alpha: 1.0                   # Focal Loss的alpha参数
       focal_gamma: 2.0                   # Focal Loss的gamma参数
@@ -188,6 +194,50 @@ augmentation:
   rotation_probability: 0.5             # 旋转概率 (0.0-1.0)
                                         # 0.5表示50%的图像会被旋转
 
+  # ==================== 图像噪声增强配置 ====================
+  # 图像噪声：通过在像素级别添加噪声来降低图像质量，从而降低模型准确率
+  noise:
+    enable_noise: false                  # 是否启用图像噪声增强
+                                        # false: 不添加噪声（默认）
+                                        # true: 启用噪声增强功能
+    noise_probability: 0.3               # 噪声应用概率 (0.0-1.0)
+                                        # 0.3表示30%的图像会被添加噪声
+
+    # ==================== 高斯噪声配置 ====================
+    gaussian_noise:
+      enable: false                       # 是否启用高斯噪声
+      mean: 0.0                         # 高斯噪声均值
+      std: 0.05                         # 高斯噪声标准差 (相对于[0,1]范围)
+                                        # 0.05表示标准差为5%的像素值范围
+      probability: 0.4                   # 高斯噪声应用概率
+
+    # ==================== 椒盐噪声配置 ====================
+    salt_pepper_noise:
+      enable: false                       # 是否启用椒盐噪声
+      salt_prob: 0.01                   # 盐噪声概率（白点）
+      pepper_prob: 0.01                 # 椒噪声概率（黑点）
+      probability: 0.3                   # 椒盐噪声应用概率
+
+    # ==================== 均匀噪声配置 ====================
+    uniform_noise:
+      enable: false                       # 是否启用均匀噪声
+      low: -0.05                        # 均匀噪声下界 (相对于[0,1]范围)
+      high: 0.05                        # 均匀噪声上界 (相对于[0,1]范围)
+      probability: 0.3                   # 均匀噪声应用概率
+
+    # ==================== 泊松噪声配置 ====================
+    poisson_noise:
+      enable: false                      # 是否启用泊松噪声
+      scale: 1.0                        # 泊松噪声缩放因子
+      probability: 0.1                   # 泊松噪声应用概率
+
+    # ==================== 模糊噪声配置 ====================
+    blur_noise:
+      enable: false                       # 是否启用模糊噪声
+      kernel_size: 3                    # 模糊核大小 (奇数)
+      sigma: 0.5                        # 高斯模糊标准差
+      probability: 0.2                   # 模糊噪声应用概率
+
   # 预设配置 (可选择应用)
   presets:
     light:    # 轻度增强
@@ -221,3 +271,66 @@ augmentation:
       hue_range: 0.2
       saturation_range: 2.0
       value_range: 2.0
+
+    # ==================== 噪声增强预设 ====================
+    noise_light:    # 轻度噪声增强
+      noise:
+        enable_noise: true
+        noise_probability: 0.2
+        gaussian_noise:
+          enable: true
+          std: 0.02
+          probability: 0.5
+        salt_pepper_noise:
+          enable: false
+        uniform_noise:
+          enable: true
+          low: -0.02
+          high: 0.02
+          probability: 0.3
+
+    noise_medium:   # 中度噪声增强 (推荐)
+      noise:
+        enable_noise: true
+        noise_probability: 0.3
+        gaussian_noise:
+          enable: true
+          std: 0.05
+          probability: 0.5
+        salt_pepper_noise:
+          enable: true
+          salt_prob: 0.01
+          pepper_prob: 0.01
+          probability: 0.3
+        uniform_noise:
+          enable: true
+          low: -0.05
+          high: 0.05
+          probability: 0.3
+        blur_noise:
+          enable: true
+          probability: 0.2
+
+    noise_heavy:    # 重度噪声增强
+      noise:
+        enable_noise: true
+        noise_probability: 0.5
+        gaussian_noise:
+          enable: true
+          std: 0.08
+          probability: 0.6
+        salt_pepper_noise:
+          enable: true
+          salt_prob: 0.02
+          pepper_prob: 0.02
+          probability: 0.4
+        uniform_noise:
+          enable: true
+          low: -0.08
+          high: 0.08
+          probability: 0.4
+        blur_noise:
+          enable: true
+          kernel_size: 5
+          sigma: 1.0
+          probability: 0.3

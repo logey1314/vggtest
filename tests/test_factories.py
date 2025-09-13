@@ -6,7 +6,7 @@
 
 import sys
 import os
-sys.path.append('.')
+sys.path.append('..')
 
 import torch
 import yaml
@@ -262,7 +262,7 @@ def test_config_integration():
 
     try:
         # 加载配置文件
-        config_path = 'configs/training_config.yaml'
+        config_path = '../configs/training_config.yaml'
         with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f)
 

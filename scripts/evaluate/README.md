@@ -1,6 +1,6 @@
 # 评估模块 (scripts/evaluate)
 
-本模块提供完整的模型评估功能，支持指定训练轮次进行评估，并生成详细的分析报告。
+本模块提供完整的模型评估功能，支持多模型工厂系统和配置驱动评估，可以评估任意训练轮次的模型并生成详细的分析报告。
 
 ## 📁 模块结构
 
@@ -9,25 +9,47 @@ scripts/evaluate/
 ├── __init__.py              # 模块初始化文件
 ├── evaluate_model.py        # 主评估脚本
 ├── evaluate_utils.py        # 评估工具函数
+├── feature_visualization.py # 特征可视化模块
 └── README.md               # 本说明文档
 ```
 
 ## 🚀 主要功能
 
-### 1. 指定轮次评估
+### 1. 多模型支持
+- **VGG16**: 经典架构，高精度
+- **ResNet18**: 轻量级，快速评估
+- **ResNet50**: 性能与效率平衡
+- 自动根据训练配置选择正确的模型架构
+
+### 2. 配置驱动评估
+- 自动读取训练时的配置备份文件
+- 确保评估设置与训练时完全一致
+- 支持不同的数据预处理参数
+- 智能回退到默认配置文件
+
+### 3. 指定轮次评估
 - 支持指定具体的训练轮次路径进行评估
 - 自动提取时间戳并生成对应的评估结果文件夹
 - 自动查找对应的模型文件（best_model.pth 或检查点文件）
 
-### 2. 默认评估
+### 4. 默认评估
 - 支持使用 latest 目录中的最新模型进行评估
 - 生成带时间戳的评估结果文件夹
 
-### 3. 全面的评估报告
+### 5. 全面的评估报告
 - 生成详细的性能指标分析
 - 混淆矩阵和错误样本分析
 - 可视化图表和统计报告
 - 同时保存到时间戳目录和 latest 目录
+
+### 6. 独立特征可视化分析工具 🆕
+**注意**: 特征可视化已从主评估脚本中分离，现在作为独立工具运行
+
+- **完整卷积特征图** - 13层VGG16卷积层的完整可视化（每层12个通道）
+- **增强类激活映射** - 多层CAM对比和类别差异分析
+- **t-SNE降维可视化** - 高维特征2D投影和聚类分析
+- **混凝土专用分析** - 针对坍落度识别优化的特征分析
+- **统计分析对比** - 激活统计、通道重要性、类别特征差异
 
 ## 📋 使用方法
 
@@ -112,10 +134,22 @@ outputs/evaluation/eval_20250820_074155/
 │   ├── error_samples.csv           # 错误样本列表
 │   ├── error_distribution.png      # 错误分布图
 │   └── misclassified_samples/      # 错误样本图像
-└── performance_charts/             # 性能图表文件夹
-    ├── precision_recall_curve.png  # PR曲线
-    ├── roc_curve.png               # ROC曲线
-    └── performance_radar.png       # 性能雷达图
+├── performance_charts/             # 性能图表文件夹
+│   ├── precision_recall_curve.png  # PR曲线
+│   ├── roc_curve.png               # ROC曲线
+│   └── performance_radar.png       # 性能雷达图
+└── feature_analysis/               # 🆕 特征可视化分析文件夹
+    ├── feature_maps/               # 特征图可视化
+    │   ├── feature_maps_sample_1.png
+    │   ├── feature_maps_sample_2.png
+    │   └── feature_maps_sample_3.png
+    ├── grad_cam/                   # Grad-CAM热力图
+    │   ├── grad_cam_correct.png    # 正确预测样本的CAM
+    │   └── grad_cam_error.png      # 错误预测样本的CAM
+    ├── activation_analysis/        # 激活强度分析
+    │   └── activation_patterns.png # 各类别激活模式对比
+    └── error_comparison/           # 错误样本特征对比
+        └── error_feature_comparison.png
 ```
 
 ### 关键指标说明
@@ -125,6 +159,17 @@ outputs/evaluation/eval_20250820_074155/
 - **Top-2准确率**: 前两个预测中包含正确答案的比例
 - **相邻类别混淆率**: 预测为相邻类别的错误比例
 - **严重错误率**: 预测差距较大的错误比例
+
+### 特征可视化指标说明 🆕
+
+- **特征图可视化**: 显示VGG16各卷积层对输入图像的特征响应
+- **Grad-CAM热力图**: 显示模型在做预测时关注的图像区域
+- **激活强度分析**: 不同类别在各卷积层的平均激活强度对比
+- **特征统计对比**: 正确预测vs错误预测样本的特征统计差异
+  - 平均值: 特征图像素的平均激活值
+  - 标准差: 特征图激活值的分布离散程度
+  - 最大值: 特征图中的最大激活值
+  - 稀疏性: 零激活像素的比例
 
 ## 🔧 工具函数说明
 
@@ -185,6 +230,13 @@ model_path = get_corresponding_model_path(train_path, project_root)
 - 字体设置是否正确
 - 输出目录是否有写入权限
 
+### Q6: 特征可视化维度错误 🆕
+**A**: 如果遇到 `mat1 and mat2 shapes cannot be multiplied` 错误：
+- **原因**: 特征提取器处理全连接层时维度不匹配
+- **解决**: 已在 v2.1 版本修复，现在只对卷积层进行特征可视化
+- **特点**: 包含自动错误处理和维度验证机制
+- **影响**: 评估会继续进行，但跳过有问题的特征可视化部分
+
 ## 💡 使用技巧
 
 1. **批量评估**: 可以修改脚本循环评估多个训练轮次
@@ -198,3 +250,34 @@ model_path = get_corresponding_model_path(train_path, project_root)
 - **可视化模块**: 使用 `src/utils/visualization.py` 生成图表
 - **数据模块**: 使用 `src/data/dataset.py` 加载评估数据
 - **评估模块**: 使用 `src/evaluation/` 中的各种评估工具
+
+## 🎨 独立特征可视化工具 (v3.0) 🆕
+
+### 快速使用
+
+1. **打开 `scripts/evaluate/feature_visualization.py`**
+2. **修改训练路径**:
+   ```python
+   train_path = "/var/yjs/zes/vgg/outputs/logs/train_20250826_041814"
+   ```
+3. **在 PyCharm 中直接运行** ▶️
+
+### 主要功能
+
+- ✅ **完整13层特征图**: VGG16所有卷积层，每层12个通道
+- ✅ **t-SNE降维可视化**: 高维特征2D投影和聚类分析
+- ✅ **增强CAM分析**: 多层CAM对比和类别差异
+- ✅ **混凝土专用**: 针对坍落度识别优化的特征分析
+- ✅ **一键运行**: 自动寻找模型、配置、数据文件
+
+### 输出结果
+
+```
+outputs/evaluation/eval_20250826_041814/feature_analysis/
+├── comprehensive_feature_maps/     # 完整特征图
+├── class_activation_maps/          # CAM热力图
+├── tsne_analysis/                  # t-SNE降维
+└── statistical_analysis/          # 统计分析
+```
+
+**注意**: 特征可视化已从主评估脚本中分离，现在作为独立工具运行，提供更专业和全面的特征分析功能。

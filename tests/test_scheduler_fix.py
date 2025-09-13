@@ -5,7 +5,7 @@
 
 import sys
 import os
-sys.path.append('.')
+sys.path.append('..')
 
 def test_scheduler_creation():
     """测试调度器创建"""
