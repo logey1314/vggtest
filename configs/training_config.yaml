@@ -41,7 +41,7 @@ dataloader:
 
 # ==================== 模型结构配置 ====================
 model:
-  name: "resnet18"                          # 模型名称：vgg16, resnet18, resnet50
+  name: "vgg16"                          # 模型名称：vgg16, resnet18, resnet50
   pretrained: true                      # 是否使用预训练权重
                                          # false: 从头开始训练（需要更多数据和时间）
                                          # true: 使用ImageNet预训练权重（推荐，收敛快）
@@ -67,7 +67,7 @@ model:
 
 # ==================== 训练过程配置 ====================
 training:
-  epochs: 100                             # 训练轮数：数据集完整训练的次数
+  epochs: 60                             # 训练轮数：数据集完整训练的次数
                                          # 从头训练建议80-200，预训练可用20-50
   learning_rate: 0.0001                   # 初始学习率：控制参数更新步长
                                          # 从头训练：0.001-0.01，预训练：0.0001-0.001
@@ -136,6 +136,16 @@ save:
   save_frequency: 50                      # 保存频率：每隔多少个epoch保存一次
                                          # 1: 每个epoch都保存，2: 每2个epoch保存一次
   save_checkpoint_every_epoch: false      # 是否每个epoch都保存检查点（用于恢复训练）
+  
+  # ==================== 定期权重保存配置 ====================
+  enable_periodic_weights_save: true     # 是否启用定期模型权重保存
+                                         # true: 定期保存纯模型权重文件
+                                         # false: 禁用定期权重保存功能
+  weights_save_frequency: 10             # 权重保存频率：每隔多少个epoch保存一次权重
+                                         # 例如: 10表示每10个epoch保存一次权重文件
+  max_weights_to_keep: 6                 # 最多保留的权重文件数量
+                                         # 0: 保留所有权重文件
+                                         # N: 只保留最新的N个权重文件，自动删除旧文件
 
 # ==================== 恢复训练配置 ====================
 resume:

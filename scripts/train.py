@@ -40,6 +40,48 @@ def load_config(config_path):
         return None
 
 
+def manage_periodic_weights(weights_dir, latest_weights_dir, max_keep=5):
+    """
+    管理定期保存的权重文件，自动清理旧文件
+    
+    Args:
+        weights_dir: 时间戳权重目录
+        latest_weights_dir: latest权重目录 
+        max_keep: 最多保留的权重文件数量，0表示全部保留
+    """
+    if max_keep <= 0:
+        return  # 不限制文件数量
+    
+    # 管理时间戳目录中的权重文件
+    for target_dir in [weights_dir, latest_weights_dir]:
+        if not os.path.exists(target_dir):
+            continue
+            
+        # 获取所有权重文件
+        weight_files = []
+        for filename in os.listdir(target_dir):
+            if filename.startswith('model_epoch_') and filename.endswith('.pth'):
+                filepath = os.path.join(target_dir, filename)
+                # 提取epoch数字用于排序
+                try:
+                    epoch_num = int(filename.replace('model_epoch_', '').replace('.pth', ''))
+                    weight_files.append((epoch_num, filepath))
+                except ValueError:
+                    continue
+        
+        # 按epoch数字排序
+        weight_files.sort(key=lambda x: x[0])
+        
+        # 如果文件数量超过限制，删除旧文件
+        while len(weight_files) > max_keep:
+            _, old_file = weight_files.pop(0)  # 删除最旧的文件
+            try:
+                os.remove(old_file)
+                print(f"   🗑️  删除旧权重文件: {os.path.basename(old_file)}")
+            except OSError as e:
+                print(f"   ⚠️  删除权重文件失败: {e}")
+
+
 def stratified_train_val_test_split(lines, train_ratio=0.6, val_ratio=0.2, test_ratio=0.2, random_seed=None, num_classes=None):
     """
     分层采样划分训练集、验证集和测试集
@@ -363,6 +405,11 @@ def main():
     SAVE_BEST_ONLY = config['save']['save_best_only']
     SAVE_FREQUENCY = config['save']['save_frequency']
     SAVE_CHECKPOINT_EVERY_EPOCH = config['save']['save_checkpoint_every_epoch']
+    
+    # 定期权重保存配置
+    ENABLE_PERIODIC_WEIGHTS_SAVE = config['save'].get('enable_periodic_weights_save', False)
+    WEIGHTS_SAVE_FREQUENCY = config['save'].get('weights_save_frequency', 10)
+    MAX_WEIGHTS_TO_KEEP = config['save'].get('max_weights_to_keep', 5)
 
     # 日志配置
     VERBOSE = config['logging']['verbose']
@@ -389,6 +436,10 @@ def main():
     latest_checkpoint_dir = os.path.join(base_checkpoint_dir, "latest")
     latest_log_dir = os.path.join(base_log_dir, "latest")
     latest_plot_dir = os.path.join(base_plot_dir, "latest")
+    
+    # weights目录（用于定期权重保存）
+    weights_dir = os.path.join(checkpoint_dir, "weights")
+    latest_weights_dir = os.path.join(latest_checkpoint_dir, "weights")
 
     if VERBOSE:
         print(f"📁 项目根目录: {project_root}")
@@ -400,7 +451,13 @@ def main():
 
     # ==================== 创建目录和设置日志 ====================
     # 创建所有必要的目录
-    for directory in [checkpoint_dir, log_dir, plot_dir, latest_checkpoint_dir, latest_log_dir, latest_plot_dir]:
+    directories_to_create = [checkpoint_dir, log_dir, plot_dir, latest_checkpoint_dir, latest_log_dir, latest_plot_dir]
+    
+    # 如果启用定期权重保存，添加权重目录
+    if ENABLE_PERIODIC_WEIGHTS_SAVE:
+        directories_to_create.extend([weights_dir, latest_weights_dir])
+    
+    for directory in directories_to_create:
         os.makedirs(directory, exist_ok=True)
 
     # 备份配置文件到日志目录
@@ -595,6 +652,13 @@ def main():
     print(f"   损失函数: {config['training']['loss_function']['name']}")
     print(f"   保存最佳模型: {'是' if SAVE_BEST_ONLY else '否'}")
     print(f"   保存频率: 每{SAVE_FREQUENCY}个epoch" if not SAVE_CHECKPOINT_EVERY_EPOCH else "每个epoch")
+    print(f"   定期权重保存: {'是' if ENABLE_PERIODIC_WEIGHTS_SAVE else '否'}")
+    if ENABLE_PERIODIC_WEIGHTS_SAVE:
+        print(f"   权重保存频率: 每{WEIGHTS_SAVE_FREQUENCY}个epoch")
+        if MAX_WEIGHTS_TO_KEEP > 0:
+            print(f"   最多保留权重: {MAX_WEIGHTS_TO_KEEP}个文件")
+        else:
+            print(f"   最多保留权重: 全部保留")
     if scheduler is not None:
         print(f"   学习率调度器: {config['training']['scheduler']['name']}")
     else:
@@ -811,6 +875,24 @@ def main():
             torch.save(checkpoint_data, os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch+1}.pth"))
             # 同时保存到latest目录
             torch.save(checkpoint_data, os.path.join(latest_checkpoint_dir, f"checkpoint_epoch_{epoch+1}.pth"))
+
+        # ==================== 定期权重保存 ====================
+        if ENABLE_PERIODIC_WEIGHTS_SAVE and (epoch + 1) % WEIGHTS_SAVE_FREQUENCY == 0:
+            weight_filename = f"model_epoch_{epoch+1}.pth"
+            
+            # 保存权重到时间戳目录
+            weight_path = os.path.join(weights_dir, weight_filename)
+            torch.save(net.state_dict(), weight_path)
+            
+            # 同时保存到latest目录
+            latest_weight_path = os.path.join(latest_weights_dir, weight_filename)
+            torch.save(net.state_dict(), latest_weight_path)
+            
+            print(f"  💾 定期权重保存: {weight_filename}")
+            logger.info(f"  💾 定期权重保存: {weight_filename}")
+            
+            # 管理权重文件数量
+            manage_periodic_weights(weights_dir, latest_weights_dir, MAX_WEIGHTS_TO_KEEP)
 
         print("-" * 80)
 
