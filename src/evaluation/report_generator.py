@@ -102,6 +102,27 @@ class ReportGenerator:
         overview_path = os.path.join(save_dir, "performance_overview.png")
         self.plot_performance_overview(metrics_results, overview_path)
         
+        # 5. 生成各类别单独性能图表
+        print("📊 生成各类别性能图表...")
+        plots_dir = os.path.join(save_dir, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+        
+        # 各类别精确率图表
+        precision_path = os.path.join(plots_dir, "class_precision.png")
+        self.plot_class_precision(metrics_results, precision_path)
+        
+        # 各类别准确率图表
+        accuracy_path = os.path.join(plots_dir, "class_accuracy.png")
+        self.plot_class_accuracy(metrics_results, accuracy_path)
+        
+        # 各类别召回率图表
+        recall_path = os.path.join(plots_dir, "class_recall.png")
+        self.plot_class_recall(metrics_results, recall_path)
+        
+        # 各类别F1分数图表
+        f1_path = os.path.join(plots_dir, "class_f1_score.png")
+        self.plot_class_f1_score(metrics_results, f1_path)
+        
         # 5. 整合所有结果
         comprehensive_results = {
             'model_info': {
@@ -286,12 +307,14 @@ class ReportGenerator:
             precision = results['metrics'][f'precision_{class_name}']
             recall = results['metrics'][f'recall_{class_name}']
             f1 = results['metrics'][f'f1_{class_name}']
+            accuracy = results['metrics'][f'accuracy_{class_name}']
             
             report += f"""
 {class_name}:
   精确率: {precision:.4f}
   召回率: {recall:.4f}
-  F1-Score: {f1:.4f}"""
+  F1-Score: {f1:.4f}
+  准确率: {accuracy:.4f}"""
 
         report += f"""
 
@@ -343,3 +366,179 @@ class ReportGenerator:
 """
 
         return report
+    
+    def plot_class_precision(self, metrics_results, save_path):
+        """
+        绘制各类别精确率图表
+        
+        Args:
+            metrics_results (dict): 评估指标结果
+            save_path (str): 保存路径
+        """
+        plt.figure(figsize=(14, 8))
+        
+        # 获取各类别精确率
+        precision_values = [metrics_results[f'precision_{name}'] for name in self.class_names]
+        
+        # 创建柱状图
+        bars = plt.bar(range(len(self.class_names)), precision_values, 
+                      color='#3498DB', alpha=0.8, edgecolor='#2980B9', linewidth=1)
+        
+        # 设置标题和标签
+        plt.title(f'{self.model_name} 各类别精确率', fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel('类别', fontsize=12)
+        plt.ylabel('精确率', fontsize=12)
+        
+        # 设置x轴标签
+        plt.xticks(range(len(self.class_names)), self.class_names, rotation=45, ha='right')
+        
+        # 设置y轴范围
+        plt.ylim(0, 1)
+        
+        # 添加数值标签
+        for i, (bar, value) in enumerate(zip(bars, precision_values)):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{value:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        # 添加网格
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # 调整布局
+        plt.tight_layout()
+        
+        # 保存图表
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"📊 各类别精确率图表已保存: {save_path}")
+        plt.show()
+    
+    def plot_class_accuracy(self, metrics_results, save_path):
+        """
+        绘制各类别准确率图表
+        
+        Args:
+            metrics_results (dict): 评估指标结果
+            save_path (str): 保存路径
+        """
+        plt.figure(figsize=(14, 8))
+        
+        # 获取各类别准确率
+        accuracy_values = [metrics_results[f'accuracy_{name}'] for name in self.class_names]
+        
+        # 创建柱状图
+        bars = plt.bar(range(len(self.class_names)), accuracy_values, 
+                      color='#2ECC71', alpha=0.8, edgecolor='#27AE60', linewidth=1)
+        
+        # 设置标题和标签
+        plt.title(f'{self.model_name} 各类别准确率', fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel('类别', fontsize=12)
+        plt.ylabel('准确率', fontsize=12)
+        
+        # 设置x轴标签
+        plt.xticks(range(len(self.class_names)), self.class_names, rotation=45, ha='right')
+        
+        # 设置y轴范围
+        plt.ylim(0, 1)
+        
+        # 添加数值标签
+        for i, (bar, value) in enumerate(zip(bars, accuracy_values)):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{value:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        # 添加网格
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # 调整布局
+        plt.tight_layout()
+        
+        # 保存图表
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"📊 各类别准确率图表已保存: {save_path}")
+        plt.show()
+    
+    def plot_class_recall(self, metrics_results, save_path):
+        """
+        绘制各类别召回率图表
+        
+        Args:
+            metrics_results (dict): 评估指标结果
+            save_path (str): 保存路径
+        """
+        plt.figure(figsize=(14, 8))
+        
+        # 获取各类别召回率
+        recall_values = [metrics_results[f'recall_{name}'] for name in self.class_names]
+        
+        # 创建柱状图
+        bars = plt.bar(range(len(self.class_names)), recall_values, 
+                      color='#E74C3C', alpha=0.8, edgecolor='#C0392B', linewidth=1)
+        
+        # 设置标题和标签
+        plt.title(f'{self.model_name} 各类别召回率', fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel('类别', fontsize=12)
+        plt.ylabel('召回率', fontsize=12)
+        
+        # 设置x轴标签
+        plt.xticks(range(len(self.class_names)), self.class_names, rotation=45, ha='right')
+        
+        # 设置y轴范围
+        plt.ylim(0, 1)
+        
+        # 添加数值标签
+        for i, (bar, value) in enumerate(zip(bars, recall_values)):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{value:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        # 添加网格
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # 调整布局
+        plt.tight_layout()
+        
+        # 保存图表
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"📊 各类别召回率图表已保存: {save_path}")
+        plt.show()
+    
+    def plot_class_f1_score(self, metrics_results, save_path):
+        """
+        绘制各类别F1分数图表
+        
+        Args:
+            metrics_results (dict): 评估指标结果
+            save_path (str): 保存路径
+        """
+        plt.figure(figsize=(14, 8))
+        
+        # 获取各类别F1分数
+        f1_values = [metrics_results[f'f1_{name}'] for name in self.class_names]
+        
+        # 创建柱状图
+        bars = plt.bar(range(len(self.class_names)), f1_values, 
+                      color='#F39C12', alpha=0.8, edgecolor='#E67E22', linewidth=1)
+        
+        # 设置标题和标签
+        plt.title(f'{self.model_name} 各类别F1分数', fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel('类别', fontsize=12)
+        plt.ylabel('F1分数', fontsize=12)
+        
+        # 设置x轴标签
+        plt.xticks(range(len(self.class_names)), self.class_names, rotation=45, ha='right')
+        
+        # 设置y轴范围
+        plt.ylim(0, 1)
+        
+        # 添加数值标签
+        for i, (bar, value) in enumerate(zip(bars, f1_values)):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+                    f'{value:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        # 添加网格
+        plt.grid(True, alpha=0.3, axis='y')
+        
+        # 调整布局
+        plt.tight_layout()
+        
+        # 保存图表
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"📊 各类别F1分数图表已保存: {save_path}")
+        plt.show()

@@ -1,0 +1,262 @@
+2025-09-14 16:44:56,393 - INFO - 坍落度识别系统启动
+2025-09-14 16:44:57,019 - INFO - 配置文件加载成功
+2025-09-14 16:45:04,101 - INFO - 模型加载成功: resnet18, 权重: pretrained/resnet18/best_model.pth
+2025-09-14 16:45:15,361 - INFO - 加载文件夹: F:/project/vgg_test/data/raw/27分类/类别17_220-225, 找到 2480 张图片
+2025-09-14 16:45:16,681 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:16,939 - INFO - 识别完成: 类别18_225-230 (置信度: 36.08%)
+2025-09-14 16:45:20,619 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:20,697 - INFO - 识别完成: 类别18_225-230 (置信度: 36.08%)
+2025-09-14 16:45:23,228 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:23,304 - INFO - 识别完成: 类别17_220-225 (置信度: 76.17%)
+2025-09-14 16:45:26,803 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:26,877 - INFO - 识别完成: 类别17_220-225 (置信度: 85.14%)
+2025-09-14 16:45:30,744 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:30,818 - INFO - 识别完成: 类别17_220-225 (置信度: 88.31%)
+2025-09-14 16:45:35,295 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:35,370 - INFO - 识别完成: 类别17_220-225 (置信度: 79.04%)
+2025-09-14 16:45:42,145 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:42,218 - INFO - 识别完成: 类别17_220-225 (置信度: 86.79%)
+2025-09-14 16:45:48,614 - INFO - 加载文件夹: F:/project/vgg_test/data/raw/27分类/类别1_120-130, 找到 88 张图片
+2025-09-14 16:45:52,964 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:53,040 - INFO - 识别完成: 类别1_120-130 (置信度: 99.83%)
+2025-09-14 16:45:57,488 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:45:57,569 - INFO - 识别完成: 类别1_120-130 (置信度: 99.05%)
+2025-09-14 16:46:07,396 - INFO - 加载文件夹: F:/project/vgg_test/data/raw/27分类/类别23_260-265, 找到 360 张图片
+2025-09-14 16:46:09,967 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:10,051 - INFO - 识别完成: 类别23_260-265 (置信度: 81.84%)
+2025-09-14 16:46:14,732 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:14,807 - INFO - 识别完成: 类别23_260-265 (置信度: 98.84%)
+2025-09-14 16:46:19,701 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:19,783 - INFO - 识别完成: 类别23_260-265 (置信度: 92.08%)
+2025-09-14 16:46:31,673 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:31,747 - INFO - 识别完成: 类别23_260-265 (置信度: 99.74%)
+2025-09-14 16:46:37,527 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:37,602 - INFO - 识别完成: 类别23_260-265 (置信度: 95.99%)
+2025-09-14 16:46:45,161 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:45,238 - INFO - 识别完成: 类别17_220-225 (置信度: 52.32%)
+2025-09-14 16:46:51,668 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:51,756 - INFO - 识别完成: 类别17_220-225 (置信度: 32.11%)
+2025-09-14 16:46:57,993 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:46:58,070 - INFO - 识别完成: 类别23_260-265 (置信度: 93.85%)
+2025-09-14 16:47:02,613 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:02,687 - INFO - 识别完成: 类别17_220-225 (置信度: 42.31%)
+2025-09-14 16:47:06,869 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:06,943 - INFO - 识别完成: 类别21_240-250 (置信度: 42.49%)
+2025-09-14 16:47:08,807 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:08,885 - INFO - 识别完成: 类别21_240-250 (置信度: 42.49%)
+2025-09-14 16:47:10,137 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:10,215 - INFO - 识别完成: 类别21_240-250 (置信度: 36.29%)
+2025-09-14 16:47:11,581 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:11,657 - INFO - 识别完成: 类别21_240-250 (置信度: 36.29%)
+2025-09-14 16:47:13,178 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:13,269 - INFO - 识别完成: 类别23_260-265 (置信度: 35.66%)
+2025-09-14 16:47:14,486 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:14,559 - INFO - 识别完成: 类别23_260-265 (置信度: 35.66%)
+2025-09-14 16:47:46,044 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,075 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,103 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,132 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,163 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,196 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,229 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,256 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,286 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,314 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,342 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,369 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,398 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,426 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,454 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,483 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,512 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,544 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,575 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,607 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,633 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,660 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,688 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,717 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,747 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,774 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,802 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,832 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,859 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,888 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,917 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:46,948 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,146 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,176 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,204 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,232 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,262 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,290 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,320 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,348 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,383 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,416 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,447 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,477 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,506 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,533 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,561 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,590 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,621 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,647 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,674 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,702 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,729 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,756 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,785 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,814 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,843 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,873 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,903 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,932 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,959 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:47,987 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,017 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,046 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,238 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,267 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,293 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,322 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,349 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,379 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,406 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,435 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,463 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,492 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,522 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,549 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,576 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,602 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,628 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,655 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,684 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,714 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,742 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,770 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,799 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,826 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,857 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,886 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,918 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,948 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:48,975 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,003 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,029 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,057 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,086 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,115 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,300 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,334 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,363 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:47:49,394 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:50,892 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:50,919 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:50,947 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:50,976 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,005 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,036 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,065 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,093 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,118 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,146 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,175 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,206 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,231 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,255 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,282 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,308 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,338 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,365 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,393 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,422 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,448 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,477 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,503 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,533 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,561 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,590 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,618 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,645 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,670 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,696 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,725 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,750 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,927 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,953 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:51,982 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,008 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,039 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,073 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,100 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,128 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,157 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,186 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,215 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,241 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,268 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,296 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,327 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,352 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,380 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,410 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,435 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,463 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,489 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,514 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,539 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,566 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,596 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,624 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,650 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,676 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,701 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,734 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,759 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,788 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,936 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,963 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:52,989 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,018 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,045 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,070 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,097 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,122 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,150 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,175 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,202 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,229 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,257 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,283 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,311 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,336 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,363 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,392 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,422 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,451 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,482 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,508 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,533 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,564 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,595 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,621 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,650 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,679 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,708 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,733 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,759 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,785 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,953 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:53,984 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,015 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,048 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,078 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,109 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,140 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,171 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,204 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,235 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,264 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined
+2025-09-14 16:48:54,292 - WARNING - 图像增强失败，使用原图像: name 'ImageEnhance' is not defined

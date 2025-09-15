@@ -84,12 +84,42 @@ class ModelMetrics:
         recall_per_class = recall_score(y_true, y_pred, average=None)
         f1_per_class = f1_score(y_true, y_pred, average=None)
         
+        # 计算各类别准确率
+        accuracy_per_class = self._calculate_per_class_accuracy(y_true, y_pred)
+        
         for i, class_name in enumerate(self.class_names):
             metrics[f'precision_{class_name}'] = precision_per_class[i]
             metrics[f'recall_{class_name}'] = recall_per_class[i]
             metrics[f'f1_{class_name}'] = f1_per_class[i]
+            metrics[f'accuracy_{class_name}'] = accuracy_per_class[i]
         
         return metrics
+    
+    def _calculate_per_class_accuracy(self, y_true, y_pred):
+        """
+        计算各类别准确率
+        
+        Args:
+            y_true (array): 真实标签
+            y_pred (array): 预测标签
+            
+        Returns:
+            array: 各类别准确率
+        """
+        # 确保类别名称已设置
+        self._ensure_class_names(y_true)
+        
+        accuracy_per_class = []
+        for i in range(self.num_classes):
+            # 对于每个类别，计算该类别样本的准确率
+            class_mask = (y_true == i)
+            if np.sum(class_mask) > 0:
+                class_accuracy = np.mean(y_pred[class_mask] == y_true[class_mask])
+            else:
+                class_accuracy = 0.0
+            accuracy_per_class.append(class_accuracy)
+        
+        return np.array(accuracy_per_class)
     
     def calculate_confusion_matrix(self, y_true, y_pred):
         """

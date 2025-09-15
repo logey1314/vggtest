@@ -106,7 +106,7 @@ def load_model(model_path, config, device='cpu'):
 
 def create_evaluation_dataloader(config, project_root):
     """
-    创建评估数据加载器
+    创建评估数据加载器 - 使用测试集进行最终评估
     
     Args:
         config (dict): 配置字典
@@ -115,8 +115,22 @@ def create_evaluation_dataloader(config, project_root):
     Returns:
         DataLoader: 评估数据加载器
     """
-    # 标注文件路径
-    annotation_path = os.path.join(project_root, config['data']['annotation_file'])
+    # 使用测试集标注文件进行评估
+    # 兼容性处理：如果配置中没有test_annotation_file，使用默认路径
+    if 'test_annotation_file' in config['data']:
+        annotation_file = config['data']['test_annotation_file']
+        dataset_type = "测试集"
+        print(f"📊 评估模式: 使用测试集进行最终性能评估")
+    else:
+        # 兼容旧配置：回退到默认测试集路径
+        annotation_file = "data/annotations/cls_test.txt"
+        dataset_type = "测试集（默认路径）"
+        print(f"📊 评估模式: 使用测试集进行最终性能评估（兼容模式）")
+        print(f"⚠️  配置文件中未找到test_annotation_file，使用默认路径")
+    
+    annotation_path = os.path.join(project_root, annotation_file)
+    print(f"📁 评估数据集: {dataset_type}")
+    print(f"📄 标注文件: {annotation_path}")
     
     if not os.path.exists(annotation_path):
         print(f"❌ 标注文件不存在: {annotation_path}")
@@ -248,7 +262,7 @@ def main():
     # ==================== 配置参数 ====================
     # 🎯 指定要评估的训练轮次路径（在这里修改）
     # 设置为具体路径来评估指定轮次，设置为 None 使用默认的 latest 模型
-    SPECIFIC_TRAIN_PATH = "/var/yjs/zes/vgg/outputs/logs/train_20250912_204031"
+    SPECIFIC_TRAIN_PATH = "/var/yjs/zes/vgg/outputs/logs/train_20250914_112502"
 
     # SPECIFIC_TRAIN_PATH = None  # 使用默认的 latest 模型
 
@@ -262,6 +276,11 @@ def main():
     # 获取项目路径
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(os.path.dirname(script_dir))  # 上两级目录
+    
+    # 修复路径问题：如果路径以 /root 开头，去掉 /root 前缀
+    if project_root.startswith('/root/'):
+        project_root = project_root[6:]  # 去掉 '/root' 前缀
+        print(f"🔧 修复项目根目录路径: {project_root}")
 
     # 根据配置确定模型路径和评估目录
     if SPECIFIC_TRAIN_PATH:
@@ -284,8 +303,11 @@ def main():
         model_path = os.path.join(project_root, 'models', 'checkpoints', 'latest', 'best_model.pth')
         eval_timestamp = datetime.datetime.now().strftime("eval_%Y%m%d_%H%M%S")
 
-    # 评估结果保存目录
+    # ==================== 确定评估类型和保存目录 ====================
+    # 使用测试集评估，但保存到evaluation目录（保持兼容性）
     base_eval_dir = os.path.join(project_root, 'outputs', 'evaluation')
+    eval_type = "测试集"
+    
     save_dir = os.path.join(base_eval_dir, eval_timestamp)
     latest_eval_dir = os.path.join(base_eval_dir, "latest")
 
@@ -302,6 +324,7 @@ def main():
 
     print("🚀 开始模型评估")
     print("="*80)
+    print(f"📊 评估类型: {eval_type}最终评估")
     print(f"📁 项目根目录: {project_root}")
     print(f"📄 配置文件来源: {config_source}")
     print(f"🤖 模型文件: {model_path}")
@@ -341,21 +364,41 @@ def main():
     print(f"   预测准确率: {np.mean(y_true == y_pred):.4f}")
 
     # ==================== 生成评估报告 ====================
+    print("📋 准备生成评估报告...")
     class_names = config['data']['class_names']
     model_type = config['model']['name'].upper()
     model_name = f"{model_type}-{config['data']['num_classes']}类"
 
+    print(f"📊 类别数量: {len(class_names)}")
+    print(f"🤖 模型名称: {model_name}")
+
     # 初始化报告生成器
+    print("🔧 初始化报告生成器...")
     report_generator = ReportGenerator(class_names, model_name)
 
     # 生成综合评估报告（保存到时间戳目录）
-    results = report_generator.generate_comprehensive_report(
-        y_true=y_true,
-        y_pred=y_pred,
-        y_prob=y_prob,
-        image_paths=image_paths,
-        save_dir=save_dir
-    )
+    print(f"📋 开始生成综合评估报告...")
+    print(f"💾 保存目录: {save_dir}")
+    
+    try:
+        results = report_generator.generate_comprehensive_report(
+            y_true=y_true,
+            y_pred=y_pred,
+            y_prob=y_prob,
+            image_paths=image_paths,
+            save_dir=save_dir
+        )
+        print("✅ 综合评估报告生成完成")
+    except Exception as e:
+        print(f"❌ 生成综合评估报告时出错: {e}")
+        print("🔍 尝试生成简化报告...")
+        # 如果综合报告失败，至少输出基本指标
+        from sklearn.metrics import accuracy_score, classification_report
+        accuracy = accuracy_score(y_true, y_pred)
+        print(f"整体准确率: {accuracy:.4f}")
+        print("\n分类报告:")
+        print(classification_report(y_true, y_pred, target_names=class_names))
+        return
 
     # 同时保存到latest目录
     print(f"\n📋 同时保存到latest目录: {latest_eval_dir}")
@@ -372,7 +415,7 @@ def main():
 
     # ==================== 输出关键结果 ====================
     print("\n" + "="*80)
-    print("📊 评估结果摘要")
+    print(f"📊 {eval_type}评估结果摘要")
     print("="*80)
     print(f"整体准确率: {results['metrics']['accuracy']:.4f}")
     print(f"宏平均F1-Score: {results['metrics']['f1_macro']:.4f}")
@@ -390,7 +433,8 @@ def main():
         precision = results['metrics'][f'precision_{class_name}']
         recall = results['metrics'][f'recall_{class_name}']
         f1 = results['metrics'][f'f1_{class_name}']
-        print(f"  {class_name}: P={precision:.3f}, R={recall:.3f}, F1={f1:.3f}")
+        accuracy = results['metrics'][f'accuracy_{class_name}']
+        print(f"  {class_name}: P={precision:.3f}, R={recall:.3f}, F1={f1:.3f}, A={accuracy:.3f}")
 
     print("="*80)
     print("🎉 评估完成！详细结果请查看保存的文件。")

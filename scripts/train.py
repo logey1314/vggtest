@@ -40,9 +40,150 @@ def load_config(config_path):
         return None
 
 
+def stratified_train_val_test_split(lines, train_ratio=0.6, val_ratio=0.2, test_ratio=0.2, random_seed=None, num_classes=None):
+    """
+    分层采样划分训练集、验证集和测试集
+    确保三个数据集中各类别的比例保持一致
+
+    Args:
+        lines: 标注数据行列表
+        train_ratio: 训练集比例
+        val_ratio: 验证集比例
+        test_ratio: 测试集比例
+        random_seed: 随机种子
+        num_classes: 类别数量（动态适应）
+
+    Returns:
+        train_lines, val_lines, test_lines: 训练集、验证集和测试集数据
+    """
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    # 验证比例和为1
+    total_ratio = train_ratio + val_ratio + test_ratio
+    if abs(total_ratio - 1.0) > 1e-6:
+        print(f"⚠️  数据集比例和不为1: {total_ratio:.3f}, 将自动归一化")
+        train_ratio /= total_ratio
+        val_ratio /= total_ratio
+        test_ratio /= total_ratio
+
+    # 动态确定类别数量
+    if num_classes is None:
+        # 从数据中自动推断类别数量
+        all_class_ids = set()
+        for line in lines:
+            class_id = int(line.split(';')[0])
+            all_class_ids.add(class_id)
+        num_classes = len(all_class_ids)
+        print(f"🔍 自动检测到 {num_classes} 个类别: {sorted(all_class_ids)}")
+
+    # 动态创建类别分组字典
+    class_lines = {i: [] for i in range(num_classes)}
+    for line in lines:
+        class_id = int(line.split(';')[0])
+        if class_id < num_classes:  # 确保类别ID在有效范围内
+            class_lines[class_id].append(line)
+        else:
+            print(f"⚠️  跳过无效类别ID: {class_id} (超出范围 0-{num_classes-1})")
+
+    # 统计原始分布
+    total_samples = len(lines)
+    print(f"\n📊 原始数据分布:")
+    for class_id, class_data in class_lines.items():
+        count = len(class_data)
+        percentage = count / total_samples * 100 if total_samples > 0 else 0
+        print(f"   类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
+
+    # 对每个类别进行分层划分
+    train_lines = []
+    val_lines = []
+    test_lines = []
+
+    print(f"\n🎯 分层采样三分法划分 (训练集{train_ratio*100:.0f}% / 验证集{val_ratio*100:.0f}% / 测试集{test_ratio*100:.0f}%):")
+
+    for class_id, class_data in class_lines.items():
+        if len(class_data) == 0:
+            print(f"   类别{class_id}: 0训练 + 0验证 + 0测试 (无数据)")
+            continue
+
+        # 打乱当前类别的数据
+        np.random.shuffle(class_data)
+
+        # 计算划分点
+        total_class_samples = len(class_data)
+        train_split = int(total_class_samples * train_ratio)
+        val_split = int(total_class_samples * (train_ratio + val_ratio))
+
+        # 确保每个数据集至少有一个样本（如果该类别有足够样本）
+        if total_class_samples >= 3:
+            train_split = max(1, train_split)
+            val_split = max(train_split + 1, val_split)
+            val_split = min(total_class_samples - 1, val_split)  # 确保测试集至少有一个样本
+
+        # 划分训练集、验证集和测试集
+        class_train = class_data[:train_split]
+        class_val = class_data[train_split:val_split]
+        class_test = class_data[val_split:]
+
+        train_lines.extend(class_train)
+        val_lines.extend(class_val)
+        test_lines.extend(class_test)
+
+        print(f"   类别{class_id}: {len(class_train)}训练 + {len(class_val)}验证 + {len(class_test)}测试")
+
+    # 打乱最终的数据集
+    np.random.shuffle(train_lines)
+    np.random.shuffle(val_lines)
+    np.random.shuffle(test_lines)
+
+    # 验证分层效果
+    print(f"\n✅ 三分法分层采样结果验证:")
+
+    # 统计训练集分布
+    train_class_counts = {i: 0 for i in range(num_classes)}
+    for line in train_lines:
+        class_id = int(line.split(';')[0])
+        if class_id in train_class_counts:
+            train_class_counts[class_id] += 1
+
+    # 统计验证集分布
+    val_class_counts = {i: 0 for i in range(num_classes)}
+    for line in val_lines:
+        class_id = int(line.split(';')[0])
+        if class_id in val_class_counts:
+            val_class_counts[class_id] += 1
+
+    # 统计测试集分布
+    test_class_counts = {i: 0 for i in range(num_classes)}
+    for line in test_lines:
+        class_id = int(line.split(';')[0])
+        if class_id in test_class_counts:
+            test_class_counts[class_id] += 1
+
+    print(f"   训练集分布:")
+    for class_id, count in train_class_counts.items():
+        percentage = count / len(train_lines) * 100 if len(train_lines) > 0 else 0
+        print(f"     类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
+
+    print(f"   验证集分布:")
+    for class_id, count in val_class_counts.items():
+        percentage = count / len(val_lines) * 100 if len(val_lines) > 0 else 0
+        print(f"     类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
+
+    print(f"   测试集分布:")
+    for class_id, count in test_class_counts.items():
+        percentage = count / len(test_lines) * 100 if len(test_lines) > 0 else 0
+        print(f"     类别{class_id}: {count:,}样本 ({percentage:.1f}%)")
+
+    if random_seed is not None:
+        np.random.seed(None)  # 重置随机种子
+
+    return train_lines, val_lines, test_lines
+
+
 def stratified_train_val_split(lines, train_ratio=0.8, random_seed=None, num_classes=None):
     """
-    分层采样划分训练集和验证集
+    分层采样划分训练集和验证集 (兼容旧版本)
     确保训练集和验证集中各类别的比例保持一致
 
     Args:
@@ -171,9 +312,13 @@ def main():
     INPUT_SHAPE = config['data']['input_shape']
 
     # 数据集配置
-    TRAIN_VAL_SPLIT = config['data']['train_val_split']
     RANDOM_SEED = config['data']['random_seed']
     STRATIFIED_SPLIT = config['data']['stratified_split']
+    
+    # 数据划分配置
+    TRAIN_RATIO = config['data']['train_ratio']
+    VAL_RATIO = config['data']['val_ratio']
+    TEST_RATIO = config['data']['test_ratio']
 
     # 数据加载器配置
     NUM_WORKERS = config['dataloader']['num_workers']
@@ -212,7 +357,6 @@ def main():
     }
 
     # 路径配置
-    ANNOTATION_PATH = config['data']['annotation_file']
     CHECKPOINT_DIR = config['save']['checkpoint_dir']
 
     # 保存配置
@@ -231,9 +375,6 @@ def main():
     # 创建时间戳用于区分不同训练
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # 转换为绝对路径
-    annotation_path = os.path.join(project_root, ANNOTATION_PATH)
-
     # 创建时间戳目录结构
     base_checkpoint_dir = os.path.join(project_root, CHECKPOINT_DIR)
     base_log_dir = os.path.join(project_root, config['logging']['log_dir'])
@@ -251,7 +392,6 @@ def main():
 
     if VERBOSE:
         print(f"📁 项目根目录: {project_root}")
-        print(f"📄 标注文件: {annotation_path}")
         print(f"🤖 使用预训练模型: {'是' if config['model']['pretrained'] else '否'}")
         print(f"⏰ 训练时间戳: {timestamp}")
         print(f"💾 检查点目录: {checkpoint_dir}")
@@ -302,61 +442,80 @@ def main():
     print(f"📋 配置备份: {config_backup_path}")
 
     # ==================== 数据集准备 ====================
-    # 如果标注文件不存在，尝试从旧位置读取
-    if not os.path.exists(annotation_path):
-        old_annotation_path = os.path.join(project_root, 'cls_train.txt')
-        if os.path.exists(old_annotation_path):
-            annotation_path = old_annotation_path
-            print(f"⚠️  使用旧标注文件: {annotation_path}")
-        else:
-            print(f"❌ 标注文件不存在: {annotation_path}")
-            print("请先运行 scripts/generate_annotations.py 生成标注文件")
-            return
+    print(f"\n🎯 三分法模式：直接加载已划分的数据集文件...")
     
-    with open(annotation_path, 'r') as f:
-        lines = f.readlines()
-
-    # 数据集划分
-    if STRATIFIED_SPLIT:
-        print(f"\n🎯 使用分层采样划分数据集...")
-        train_lines, val_lines = stratified_train_val_split(
-            lines,
-            train_ratio=TRAIN_VAL_SPLIT,
-            random_seed=RANDOM_SEED,
-            num_classes=NUM_CLASSES
-        )
-    else:
-        print(f"\n📊 使用随机划分数据集...")
-        np.random.seed(RANDOM_SEED)  # 使用配置文件中的随机种子
-        np.random.shuffle(lines)  # 数据打乱
-        np.random.seed(None)
-
-        # 随机划分训练集和验证集
-        train_lines = lines[:int(len(lines) * TRAIN_VAL_SPLIT)]
-        val_lines = lines[int(len(lines) * TRAIN_VAL_SPLIT):]
-
-        print(f"   训练样本: {len(train_lines):,}")
-        print(f"   验证样本: {len(val_lines):,}")
+    # 读取三个标注文件
+    train_annotation_path = os.path.join(project_root, config['data']['train_annotation_file'])
+    val_annotation_path = os.path.join(project_root, config['data']['val_annotation_file'])
+    test_annotation_path = os.path.join(project_root, config['data']['test_annotation_file'])
+    
+    # 检查文件是否存在
+    missing_files = []
+    if not os.path.exists(train_annotation_path):
+        missing_files.append(train_annotation_path)
+    if not os.path.exists(val_annotation_path):
+        missing_files.append(val_annotation_path)
+    if not os.path.exists(test_annotation_path):
+        missing_files.append(test_annotation_path)
+        
+    if missing_files:
+        print(f"❌ 标注文件不存在:")
+        for file in missing_files:
+            print(f"   {file}")
+        print(f"💡 请先运行: python scripts/generate_annotations.py")
+        return
+    
+    # 读取三个标注文件
+    with open(train_annotation_path, 'r') as f:
+        train_lines = [line.strip() for line in f.readlines() if line.strip()]
+        
+    with open(val_annotation_path, 'r') as f:
+        val_lines = [line.strip() for line in f.readlines() if line.strip()]
+        
+    with open(test_annotation_path, 'r') as f:
+        test_lines = [line.strip() for line in f.readlines() if line.strip()]
+    
+    print(f"✅ 成功加载三分法数据集:")
+    print(f"   训练集: {len(train_lines)} 样本")
+    print(f"   验证集: {len(val_lines)} 样本")
+    print(f"   测试集: {len(test_lines)} 样本")
+    
+    # 构建完整的数据行列表用于统计
+    lines = train_lines + val_lines + test_lines
 
     # 更新样本数量
     num_train = len(train_lines)
     num_val = len(val_lines)
+    num_test = len(test_lines)
 
     print(f"📊 数据集信息:")
     print(f"   总样本数: {len(lines)}")
     print(f"   训练样本: {num_train}")
     print(f"   验证样本: {num_val}")
-    print(f"   训练/验证比例: {num_train/len(lines):.1%}/{num_val/len(lines):.1%}")
+    print(f"   测试样本: {num_test}")
+    print(f"   训练/验证/测试比例: {num_train/len(lines):.1%}/{num_val/len(lines):.1%}/{num_test/len(lines):.1%}")
 
     # 记录数据集信息到日志
     logger.info("="*50)
     logger.info("📊 数据集信息")
     logger.info("="*50)
-    logger.info(f"标注文件: {annotation_path}")
+    logger.info(f"标注文件目录: data/annotations/")
     logger.info(f"总样本数: {len(lines)}")
     logger.info(f"训练样本: {num_train}")
     logger.info(f"验证样本: {num_val}")
-    logger.info(f"训练/验证比例: {num_train/len(lines):.1%}/{num_val/len(lines):.1%}")
+    logger.info(f"测试样本: {num_test}")
+    logger.info(f"训练/验证/测试比例: {num_train/len(lines):.1%}/{num_val/len(lines):.1%}/{num_test/len(lines):.1%}")
+    logger.info(f"数据划分模式: 三分法分层采样")
+    
+    # ==================== 数据集标注文件记录 ====================
+    print(f"\n📄 使用的标注文件:")
+    print(f"   训练集: {train_annotation_path}")
+    print(f"   验证集: {val_annotation_path}")
+    print(f"   测试集: {test_annotation_path}")
+    
+    logger.info(f"训练集标注文件: {train_annotation_path}")
+    logger.info(f"验证集标注文件: {val_annotation_path}")
+    logger.info(f"测试集标注文件: {test_annotation_path}")
 
     # 创建数据集
     train_data = DataGenerator(train_lines, INPUT_SHAPE, True, AUGMENTATION_CONFIG)

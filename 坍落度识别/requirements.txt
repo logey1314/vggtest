@@ -1,0 +1,24 @@
+# 坍落度识别系统依赖包
+# 核心框架
+torch>=1.9.0
+torchvision>=0.10.0
+
+# 图像处理 - 使用headless版本避免OpenMP冲突
+opencv-python-headless>=4.5.0
+Pillow>=8.0.0
+numpy>=1.19.0
+
+# 数据处理和可视化
+matplotlib>=3.3.0
+seaborn>=0.11.0
+pandas>=1.3.0
+
+# GUI框架 (Python自带，但可能需要额外安装)
+# tkinter  # 通常Python自带
+
+# 如果需要GPU支持，可以安装CUDA版本的PyTorch
+# torch>=1.9.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+# torchvision>=0.10.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+
+# 注意：使用opencv-python-headless而不是opencv-python可以避免OpenMP冲突
+# 如果仍有问题，可以设置环境变量 KMP_DUPLICATE_LIB_OK=TRUE

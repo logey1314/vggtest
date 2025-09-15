@@ -1,25 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="实验室" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" serverName="root@60.205.112.118:3060 password" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="root@192.168.1.33:22 password">
         <serverdata>
           <mappings>
             <mapping deploy="/var/yjs/zes/vgg" local="$PROJECT_DIR$" />
           </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/data/raw" />
+          </excludedPaths>
         </serverdata>
       </paths>
-      <paths name="实验室">
+      <paths name="root@192.168.1.33:22 password (2)">
         <serverdata>
           <mappings>
             <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="穿透">
+      <paths name="root@60.205.112.118:3060 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/var/yjs/zes/vgg" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/yjs/zes/vgg" local="$PROJECT_DIR$" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/data/raw" />
+            <excludedPath local="true" path="$PROJECT_DIR$/models" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="实验室">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

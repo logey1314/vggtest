@@ -1,0 +1,42 @@
+{
+  "model_name": "resnet18",
+  "weight_path": "pretrained/resnet18/best_model.pth",
+  "confidence_threshold": 0.7,
+  "batch_size": 32,
+  "image_size": 224,
+  "class_names": [
+    "类别1_120-130", "类别2_131-135", "类别3_136-140", "类别4_150-160",
+    "类别5_161-165", "类别6_166-169", "类别7_171-174", "类别8_176-179",
+    "类别9_181-184", "类别10_185-190", "类别11_190-195", "类别12_194-200",
+    "类别13_200-205", "类别14_205-210", "类别15_210-215", "类别16_215-220",
+    "类别17_220-225", "类别18_225-230", "类别19_230-235", "类别20_235-240",
+    "类别21_240-250", "类别22_250-260", "类别23_260-265", "类别24_262-270",
+    "类别25_271-275", "类别26_276-280", "类别27_281-285"
+  ],
+  "auto_enhance": true,
+  "normalize_enabled": true,
+  "resize_enabled": true,
+  "preprocessing": {
+    "contrast_factor": 1.2,
+    "sharpness_factor": 1.1,
+    "brightness_factor": 1.05,
+    "normalize_method": "tanh_range",
+    "note": "使用[-1,1]归一化以匹配训练时的预处理：x /= 127.5; x -= 1.0"
+  },
+  "batch_processing": {
+    "save_results": true,
+    "save_images": false,
+    "generate_report": true,
+    "recursive_search": true
+  },
+  "ui_settings": {
+    "window_size": "1400x1000",
+    "canvas_size": [400, 300],
+    "theme": "default"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(levelname)s - %(message)s",
+    "max_log_files": 10
+  }
+}
